@@ -14,21 +14,29 @@ export const roleCreateSchema = z.object({
   permissions: z.string().min(1, "Danh sách permission, cách nhau bởi dấu phẩy"),
 });
 
+/**
+ * Simplified report handling schema for MVP.
+ * Single action selection with optional ban duration.
+ */
 export const handleReportSchema = z.object({
-  decision: z.enum(['DISMISS', 'PROCESS', 'ESCALATE']).refine((val) => val !== undefined, {
-    message: 'Vui lòng chọn quyết định',
+  action: z.enum(['DISMISS', 'WARN_USER', 'DELETE_CONTENT', 'BAN_USER_TEMPORARY'], {
+    required_error: 'Vui lòng chọn hành động',
   }),
-  action: z.enum([
-    'WARN_USER',
-    'DELETE_CONTENT',
-    'BAN_USER_TEMPORARY',
-    'BAN_USER_PERMANENT',
-    'RESTORE_CONTENT',
-    'UNBAN_USER',
-  ]).optional(),
   reason: z.string().min(10, 'Lý do phải có ít nhất 10 ký tự'),
-  banDays: z.number().min(1).max(30).optional(),
-});
+  banDays: z.number().int().min(1).max(30).optional(),
+}).refine(
+  (data) => {
+    // Require banDays if action is BAN_USER_TEMPORARY
+    if (data.action === 'BAN_USER_TEMPORARY') {
+      return data.banDays !== undefined && data.banDays > 0;
+    }
+    return true;
+  },
+  {
+    message: 'Phải nhập số ngày ban (1-30)',
+    path: ['banDays'],
+  }
+);
 
 export type HandleReportForm = z.infer<typeof handleReportSchema>;
 

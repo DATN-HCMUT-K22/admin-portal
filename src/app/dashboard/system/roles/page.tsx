@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateRole, usePermissions, useRoles } from "@/hooks/use-admin-queries";
 import { QueryState } from "@/components/query-state";
 import { roleCreateSchema } from "@/lib/schemas/admin-forms";
+import { usePermissions as usePermissionCheck } from "@/components/auth/PermissionGate";
 import type { z } from "zod";
 import type { RoleWithPermissions } from "@/types/api";
 import { normalizeItems } from "@/lib/list-utils";
@@ -12,10 +13,25 @@ import { normalizeItems } from "@/lib/list-utils";
 type RoleForm = z.infer<typeof roleCreateSchema>;
 
 export default function RolesPage() {
+  const { isAdmin } = usePermissionCheck();
   const { data: roles, isLoading: loadingRoles, error: errRoles } = useRoles();
   const { data: perms, isLoading: loadingPerms, error: errPerms } =
     usePermissions();
   const createMut = useCreateRole();
+
+  // Access control: ADMIN only
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-destructive">Không có quyền truy cập</h1>
+          <p className="mt-2 text-muted-foreground">
+            Chỉ ADMIN mới có thể quản lý vai trò và quyền hạn.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const form = useForm<RoleForm>({
     resolver: zodResolver(roleCreateSchema),

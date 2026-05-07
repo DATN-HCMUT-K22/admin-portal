@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 const systemLinks = [
   { href: "/dashboard/system/users", label: "Người dùng" },
   { href: "/dashboard/system/roles", label: "Vai trò & quyền" },
+  { href: "/dashboard/system/activity-logs", label: "Nhật ký hoạt động" },
 ];
 
 const moderationLinks = [
@@ -19,6 +20,8 @@ const moderationLinks = [
 ];
 
 const businessLinks = [
+  { href: "/dashboard/business/statistics", label: "Thống kê người dùng" },
+  { href: "/dashboard/business/reports", label: "Báo cáo" },
   { href: "/dashboard/business/locations", label: "Địa điểm (POI)" },
   {
     href: "/dashboard/business/administrative",
