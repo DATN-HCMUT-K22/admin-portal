@@ -19,9 +19,10 @@ export const roleCreateSchema = z.object({
  * Single action selection with optional ban duration.
  */
 export const handleReportSchema = z.object({
-  action: z.enum(['DISMISS', 'WARN_USER', 'DELETE_CONTENT', 'BAN_USER_TEMPORARY'], {
-    required_error: 'Vui lòng chọn hành động',
-  }),
+  action: z.enum(['DISMISS', 'WARN_USER', 'DELETE_CONTENT', 'BAN_USER_TEMPORARY']).refine(
+    (val) => val !== undefined,
+    { message: 'Vui lòng chọn hành động' }
+  ),
   reason: z.string().min(10, 'Lý do phải có ít nhất 10 ký tự'),
   banDays: z.number().int().min(1).max(30).optional(),
 }).refine(
@@ -41,9 +42,9 @@ export const handleReportSchema = z.object({
 export type HandleReportForm = z.infer<typeof handleReportSchema>;
 
 export const moderateUserSchema = z.object({
-  userId: z.string().uuid("UUID không hợp lệ"),
-  actionType: z.enum(["BAN_USER", "WARN_USER"]),
-  note: z.string().min(1),
+  user_id: z.string().uuid("UUID không hợp lệ"),
+  actionType: z.enum(["BAN_USER", "WARN_USER", "DELETE_POST"]),
+  note: z.string().optional(),
 });
 
 export const locationUpsertSchema = z.object({

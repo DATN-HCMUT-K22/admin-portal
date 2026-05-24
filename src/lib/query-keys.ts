@@ -1,6 +1,6 @@
 export const queryKeys = {
   admin: {
-    users: (page?: number) => ["admin", "users", page] as const,
+    users: (page?: number, q?: string) => ["admin", "users", page, q] as const,
     user: (userId: string) => ["admin", "user", userId] as const,
     roles: () => ["admin", "roles"] as const,
     permissions: () => ["admin", "permissions"] as const,

@@ -3,45 +3,59 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Card, Form, Input, Button, Typography, Alert, Space } from "antd";
+import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import * as authApi from "@/lib/api/auth";
 import * as usersApi from "@/lib/api/users";
 import { useAuth } from "@/providers/auth-provider";
 import { useAdminStore } from "@/stores/admin-store";
 import { getPostLoginRedirectPath } from "@/lib/auth/paths";
 
+const { Title, Text } = Typography;
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const qc = useQueryClient();
+  const [form] = Form.useForm();
   const setSession = useAdminStore((s) => s.setSession);
   const { isLoading: authLoading, user, hasAdmin, hasBa } = useAuth();
 
-  useEffect(() => {
-    if (authLoading || !user) return;
-    if (hasAdmin || hasBa) {
-      router.replace(getPostLoginRedirectPath(user.roles));
-    } else {
-      router.replace("/home");
-    }
-  }, [authLoading, user, hasAdmin, hasBa, router]);
-
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    const returnUrl = searchParams.get("returnUrl");
+    const safeReturn =
+      returnUrl &&
+      returnUrl.startsWith("/") &&
+      !returnUrl.startsWith("//") &&
+      !returnUrl.startsWith("/login")
+        ? returnUrl
+        : null;
+
+    if (hasAdmin || hasBa) {
+      router.replace(safeReturn ?? getPostLoginRedirectPath(user.roles));
+    } else {
+      router.replace("/home");
+    }
+  }, [authLoading, user, hasAdmin, hasBa, router, searchParams]);
+
+  async function onFinish(values: { username: string; password: string }) {
     setError(null);
     setSubmitting(true);
     try {
-      const data = await authApi.login({ username: username.trim(), password });
-      setSession({
-        accessToken: data.token,
-        refreshToken: data.refreshToken,
+      const data = await authApi.login({
+        username: values.username.trim(),
+        password: values.password
       });
-      const token = useAdminStore.getState().bearerToken;
-      const me = await usersApi.getMe(token);
+      setSession({
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+      });
+      const me = await usersApi.getMe();
       await qc.invalidateQueries({ queryKey: ["auth"] });
       const returnUrl = searchParams.get("returnUrl");
       const safeReturn =
@@ -61,62 +75,87 @@ export function LoginForm() {
   }
 
   return (
-    <div className="w-full max-w-sm space-y-6 rounded-2xl border border-border bg-card p-8 shadow-sm">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Đăng nhập</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          TripJoy — cổng quản trị &amp; kinh doanh
-        </p>
-      </div>
-      <form onSubmit={onSubmit} className="space-y-4">
+    <Card
+      style={{
+        width: '100%',
+        maxWidth: 400,
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+      }}
+    >
+      <Space orientation="vertical" size="large" style={{ width: '100%' }}>
         <div>
-          <label
-            htmlFor="username"
-            className="mb-1 block text-sm font-medium text-foreground"
-          >
-            Tên đăng nhập
-          </label>
-          <input
-            id="username"
-            name="username"
-            autoComplete="username"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
+          <Title level={3} style={{ marginBottom: 8 }}>
+            Đăng nhập
+          </Title>
+          <Text type="secondary">
+            TripJoy — cổng quản trị & kinh doanh
+          </Text>
         </div>
-        <div>
-          <label
-            htmlFor="password"
-            className="mb-1 block text-sm font-medium text-foreground"
-          >
-            Mật khẩu
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        {error ? (
-          <p className="text-sm text-destructive" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
+
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          autoComplete="off"
+          requiredMark={false}
         >
-          {submitting ? "Đang đăng nhập…" : "Đăng nhập"}
-        </button>
-      </form>
-    </div>
+          <Form.Item
+            label="Tên đăng nhập"
+            name="username"
+            rules={[
+              { required: true, message: 'Vui lòng nhập tên đăng nhập' },
+              { min: 3, message: 'Tên đăng nhập phải có ít nhất 3 ký tự' }
+            ]}
+          >
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="Nhập tên đăng nhập"
+              autoComplete="username"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Mật khẩu"
+            name="password"
+            rules={[
+              { required: true, message: 'Vui lòng nhập mật khẩu' },
+              { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự' }
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="Nhập mật khẩu"
+              autoComplete="current-password"
+              size="large"
+            />
+          </Form.Item>
+
+          {error && (
+            <Form.Item>
+              <Alert
+                message={error}
+                type="error"
+                showIcon
+                closable
+                onClose={() => setError(null)}
+              />
+            </Form.Item>
+          )}
+
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submitting}
+              size="large"
+              block
+            >
+              {submitting ? "Đang đăng nhập…" : "Đăng nhập"}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Space>
+    </Card>
   );
 }

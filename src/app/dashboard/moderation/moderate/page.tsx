@@ -13,7 +13,7 @@ export default function ModerateUserPage() {
   const form = useForm<Form>({
     resolver: zodResolver(moderateUserSchema),
     defaultValues: {
-      userId: "",
+      user_id: "",
       actionType: "WARN_USER",
       note: "",
     },
@@ -36,12 +36,12 @@ export default function ModerateUserPage() {
         <div>
           <label className="mb-1 block text-sm font-medium">User ID (UUID)</label>
           <input
-            {...form.register("userId")}
+            {...form.register("user_id")}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 font-mono text-sm"
           />
-          {form.formState.errors.userId && (
+          {form.formState.errors.user_id && (
             <p className="mt-1 text-sm text-destructive">
-              {form.formState.errors.userId.message}
+              {form.formState.errors.user_id.message}
             </p>
           )}
         </div>

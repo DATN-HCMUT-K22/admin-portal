@@ -2,7 +2,10 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
+import { ConfigProvider, App } from "antd";
+import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { AuthProvider } from "@/providers/auth-provider";
+import theme from "@/config/theme";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -20,7 +23,13 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={client}>
-      <AuthProvider>{children}</AuthProvider>
+      <AntdRegistry>
+        <ConfigProvider theme={theme}>
+          <App>
+            <AuthProvider>{children}</AuthProvider>
+          </App>
+        </ConfigProvider>
+      </AntdRegistry>
     </QueryClientProvider>
   );
 }

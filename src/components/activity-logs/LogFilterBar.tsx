@@ -1,103 +1,97 @@
 "use client";
 
 import { useState } from "react";
-import type { ActivityLogParams } from "@/types/api";
+import type { ActivityAction, ActivityLogParams } from "@/types/api";
 
 interface Props {
   onFilterChange: (filters: ActivityLogParams) => void;
-  onExport: () => void;
-  isExporting?: boolean;
+  /** Actions available cho tab hiện tại — nếu rỗng thì show tất cả */
+  allowedActions?: ActivityAction[];
 }
 
-export function LogFilterBar({ onFilterChange, onExport, isExporting }: Props) {
-  const [filters, setFilters] = useState<ActivityLogParams>({});
+/** Nhãn thân thiện cho từng action */
+const ACTION_LABELS: Partial<Record<ActivityAction, string>> = {
+  POST_CREATED: "Tạo bài viết",
+  POST_UPDATED: "Sửa bài viết",
+  POST_DELETED: "Xóa bài viết",
+  POST_LIKED: "Thích bài viết",
+  POST_UNLIKED: "Bỏ thích",
+  POST_SAVED: "Lưu bài viết",
+  POST_SHARED: "Chia sẻ",
+  COMMENT_CREATED: "Tạo bình luận",
+  COMMENT_UPDATED: "Sửa bình luận",
+  COMMENT_DELETED: "Xóa bình luận",
+  COMMENT_LIKED: "Thích bình luận",
+  COMMENT_REPLIED: "Trả lời",
+  GROUP_CREATED: "Tạo nhóm",
+  GROUP_UPDATED: "Cập nhật nhóm",
+  GROUP_DELETED: "Xóa nhóm",
+  GROUP_JOINED: "Tham gia nhóm",
+  GROUP_LEFT: "Rời nhóm",
+  GROUP_MEMBER_ADDED: "Thêm thành viên",
+  GROUP_MEMBER_REMOVED: "Xóa thành viên",
+  GROUP_ROLE_CHANGED: "Đổi vai trò nhóm",
+  ITINERARY_CREATED: "Tạo lịch trình",
+  ITINERARY_UPDATED: "Cập nhật lịch trình",
+  ITINERARY_DELETED: "Xóa lịch trình",
+  ITINERARY_SHARED: "Chia sẻ lịch trình",
+  ITINERARY_LIKED: "Thích lịch trình",
+  MESSAGE_SENT: "Gửi tin nhắn",
+  MESSAGE_DELETED: "Xóa tin nhắn",
+  MESSAGE_LIKED: "Thích tin nhắn",
+  USER_LOGIN: "Đăng nhập",
+  USER_LOGOUT: "Đăng xuất",
+  USER_REGISTERED: "Đăng ký",
+  USER_PROFILE_UPDATED: "Cập nhật hồ sơ",
+};
 
-  const handleChange = (key: keyof ActivityLogParams, value: string | undefined) => {
-    const newFilters = { ...filters, [key]: value || undefined };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
-  };
+const ALL_ACTIONS = Object.keys(ACTION_LABELS) as ActivityAction[];
 
-  const handleClear = () => {
-    setFilters({});
+export function LogFilterBar({ onFilterChange, allowedActions }: Props) {
+  const [action, setAction] = useState<string>("");
+
+  const actions = allowedActions?.length ? allowedActions : ALL_ACTIONS;
+
+  function handleActionChange(val: string) {
+    setAction(val);
+    onFilterChange({ action: (val as ActivityAction) || undefined });
+  }
+
+  function handleClear() {
+    setAction("");
     onFilterChange({});
-  };
+  }
 
   return (
-    <div className="space-y-4 rounded-xl border border-border p-4">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* User Filter */}
-        <div>
-          <label className="mb-2 block text-sm font-medium">Người dùng</label>
-          <input
-            type="text"
-            value={filters.userId || ""}
-            onChange={(e) => handleChange("userId", e.target.value)}
-            placeholder="User ID hoặc username"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          />
-        </div>
-
-        {/* Action Filter */}
-        <div>
-          <label className="mb-2 block text-sm font-medium">Hành động</label>
-          <select
-            value={filters.action || ""}
-            onChange={(e) => handleChange("action", e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">Tất cả</option>
-            <option value="CREATE">Tạo mới</option>
-            <option value="UPDATE">Cập nhật</option>
-            <option value="DELETE">Xóa</option>
-            <option value="LOGIN">Đăng nhập</option>
-            <option value="LOGOUT">Đăng xuất</option>
-          </select>
-        </div>
-
-        {/* Entity Type Filter */}
-        <div>
-          <label className="mb-2 block text-sm font-medium">Loại đối tượng</label>
-          <select
-            value={filters.entityType || ""}
-            onChange={(e) => handleChange("entityType", e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">Tất cả</option>
-            <option value="USER">Người dùng</option>
-            <option value="POST">Bài viết</option>
-            <option value="COMMENT">Bình luận</option>
-            <option value="REPORT">Báo cáo</option>
-          </select>
-        </div>
-
-        {/* Date Range */}
-        <div>
-          <label className="mb-2 block text-sm font-medium">Từ ngày</label>
-          <input
-            type="date"
-            value={filters.startDate || ""}
-            onChange={(e) => handleChange("startDate", e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          />
-        </div>
+    <div className="flex flex-wrap items-end gap-3">
+      {/* Action filter */}
+      <div className="flex-1 min-w-[200px]">
+        <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+          Lọc theo hành động
+        </label>
+        <select
+          id="log-filter-action"
+          value={action}
+          onChange={(e) => handleActionChange(e.target.value)}
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option value="">Tất cả hành động</option>
+          {actions.map((a) => (
+            <option key={a} value={a}>
+              {ACTION_LABELS[a] ?? a}
+            </option>
+          ))}
+        </select>
       </div>
 
-      <div className="flex gap-3">
+      {action && (
         <button
           onClick={handleClear}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-accent"
+          className="rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:bg-accent"
         >
-          Xóa bộ lọc
+          Xóa lọc
         </button>
-        <button
-          onClick={onExport}
-          disabled={isExporting}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:opacity-50"
-        >
-          {isExporting ? "Đang xuất..." : "Xuất CSV"}
-        </button>
-      </div>
+      )}
     </div>
   );
 }
