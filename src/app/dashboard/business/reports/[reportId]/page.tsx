@@ -4,10 +4,12 @@ import { useState } from "react";
 import { use } from "react";
 import { useReport, useHandleReport } from "@/hooks/use-admin-queries";
 import { QueryState } from "@/components/query-state";
-import { ReportStatusBadge } from "@/components/reports/ReportStatusBadge";
-import { HandleReportModal } from "@/components/reports/HandleReportModal";
 import type { HandleReportForm } from "@/lib/schemas/admin-forms";
 import type { HandleReportRequest } from "@/types/api";
+import { HandleReportModal } from "@/components/reports/HandleReportModal";
+import { Card, Descriptions, Tag, Typography, Button, Space } from "antd";
+
+const { Title, Text, Paragraph } = Typography;
 
 export default function ReportDetailPage({ params }: { params: Promise<{ reportId: string }> }) {
   const { reportId } = use(params);
@@ -17,13 +19,28 @@ export default function ReportDetailPage({ params }: { params: Promise<{ reportI
   const handleMutation = useHandleReport(reportId);
 
   const handleSubmit = (data: HandleReportForm) => {
-    handleMutation.mutate(data as unknown as HandleReportRequest, {
+    const payload: HandleReportRequest = {
+      status: data.action === 'DISMISS' ? 'DISMISSED' : 'PROCESSED',
+      description: data.reason || '',
+    };
+
+    if (data.action !== 'DISMISS' && report?.reported_user?.id) {
+      payload.moderation_action = {
+        user_id: report.reported_user.id,
+        actionType: data.action,
+        note: data.reason || '',
+      };
+      payload.feedback_content = "Cảm ơn bạn đã báo cáo. Chúng tôi đã xử lý vi phạm.";
+    } else if (data.action === 'DISMISS') {
+      payload.feedback_content = "Cảm ơn bạn đã báo cáo. Chúng tôi đã xem xét và không thấy vi phạm.";
+    }
+
+    handleMutation.mutate(payload, {
       onSuccess: () => {
         setModalOpen(false);
-        alert("Xử lý báo cáo thành công!");
       },
       onError: (err) => {
-        alert(`Lỗi: ${err instanceof Error ? err.message : "Không xác định"}`);
+        // error handled by mutation
       },
     });
   };
@@ -31,72 +48,61 @@ export default function ReportDetailPage({ params }: { params: Promise<{ reportI
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Chi tiết báo cáo</h1>
+        <Title level={4} style={{ margin: 0 }}>Chi tiết báo cáo</Title>
         {report && report.status === "PENDING" && (
-          <button
-            onClick={() => setModalOpen(true)}
-            className="rounded-lg bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary/90"
-          >
+          <Button type="primary" onClick={() => setModalOpen(true)}>
             Xử lý báo cáo
-          </button>
+          </Button>
         )}
       </div>
 
       <QueryState isLoading={isLoading} error={error as Error | null}>
         {report && (
-          <div className="space-y-6">
-            {/* Header */}
-            <div className="rounded-xl border border-border p-6">
-              <div className="mb-4 flex items-start justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold">Báo cáo #{report.id}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(report.createdAt).toLocaleString("vi-VN")}
-                  </p>
-                </div>
-                <ReportStatusBadge status={report.status} />
+          <Space direction="vertical" size="large" style={{ width: "100%" }}>
+            <Card>
+              <div style={{ marginBottom: 16 }}>
+                <Text type="secondary">Báo cáo: </Text>
+                <Text code>{report.id}</Text>
+                <Tag 
+                  color={
+                    report.status === 'PENDING' ? 'warning' :
+                    report.status === 'PROCESSED' ? 'success' : 'default'
+                  }
+                  style={{ marginLeft: 8 }}
+                >
+                  {report.status}
+                </Tag>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Loại nội dung</p>
-                  <p className="font-medium">{report.contentType}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Loại vi phạm</p>
-                  <p className="font-medium">{report.violationType}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Người báo cáo</p>
-                  <p className="font-medium">{report.reporter.username}</p>
-                </div>
-                {report.handledBy && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Người xử lý</p>
-                    <p className="font-medium">{report.handledBy.username}</p>
-                  </div>
+              <Descriptions bordered column={2} size="small">
+                <Descriptions.Item label="Người báo cáo">
+                  <Text strong>@{report.reporter.username}</Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Thời gian">
+                  {new Date(report.created_at).toLocaleString('vi-VN')}
+                </Descriptions.Item>
+                <Descriptions.Item label="Loại vi phạm">
+                  {report.reason}
+                </Descriptions.Item>
+                <Descriptions.Item label="Loại nội dung">
+                  {report.reportedEntityType}
+                </Descriptions.Item>
+                {report.description && (
+                  <Descriptions.Item label="Mô tả báo cáo" span={2}>
+                    {report.description}
+                  </Descriptions.Item>
                 )}
-              </div>
-            </div>
+              </Descriptions>
+            </Card>
 
-            {/* Reported Content */}
-            {report.reportedEntity.content && (
-              <div className="rounded-xl border border-border p-6">
-                <h3 className="mb-3 font-semibold">Nội dung bị báo cáo</h3>
-                <div className="rounded-lg bg-muted/50 p-4">
-                  <p className="text-sm">{report.reportedEntity.content}</p>
-                </div>
-              </div>
+            {report.reported_content_text && (
+              <Card title="Nội dung bị báo cáo">
+                <Paragraph style={{ margin: 0, padding: 16, background: '#f5f5f5', borderRadius: 8 }}>
+                  {report.reported_content_text}
+                </Paragraph>
+              </Card>
             )}
-
-            {/* Description */}
-            {report.description && (
-              <div className="rounded-xl border border-border p-6">
-                <h3 className="mb-3 font-semibold">Mô tả báo cáo</h3>
-                <p className="text-sm">{report.description}</p>
-              </div>
-            )}
-          </div>
+          </Space>
         )}
       </QueryState>
 

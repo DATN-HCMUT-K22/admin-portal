@@ -4,6 +4,9 @@ import { useUsers } from "@/hooks/use-admin-queries";
 import { QueryState } from "@/components/query-state";
 import { UserTable } from "@/components/users/UserTable";
 import type { UserAdminView } from "@/types/api";
+import { Typography } from "antd";
+
+const { Title, Text } = Typography;
 
 function normalizeItems<T>(data: T[] | { items: T[] } | undefined): T[] {
   if (!data) return [];
@@ -18,8 +21,10 @@ export default function BusinessUsersPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Danh sách người dùng</h1>
-      <p className="text-sm text-muted-foreground">Chế độ xem chỉ đọc</p>
+      <div>
+        <Title level={4} style={{ margin: 0 }}>Danh sách người dùng</Title>
+        <Text type="secondary">Chế độ xem chỉ đọc</Text>
+      </div>
 
       <QueryState isLoading={isLoading} error={error as Error | null}>
         <UserTable users={users} showActions={false} />

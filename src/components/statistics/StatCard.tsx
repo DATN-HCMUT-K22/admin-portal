@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Card, Statistic } from "antd";
 
 interface Props {
   title: string;
@@ -9,15 +10,17 @@ interface Props {
 
 export function StatCard({ title, value, icon, subtitle }: Props) {
   return (
-    <div className="rounded-xl border border-border p-6">
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">{title}</p>
-        {icon && <div className="text-muted-foreground">{icon}</div>}
-      </div>
-      <div className="text-3xl font-bold">{value}</div>
+    <Card bordered={true}>
+      <Statistic
+        title={<span style={{ fontWeight: 500 }}>{title}</span>}
+        value={value}
+        prefix={icon}
+      />
       {subtitle && (
-        <p className="mt-2 text-xs text-muted-foreground">{subtitle}</p>
+        <div style={{ marginTop: 8, fontSize: 12, color: "rgba(0,0,0,0.45)" }}>
+          {subtitle}
+        </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -1,167 +1,193 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useUsers } from "@/hooks/use-admin-queries";
 import { QueryState } from "@/components/query-state";
 import { UserActivityLogDrawer } from "@/components/activity-logs/UserActivityLogDrawer";
+import { CreateUserModal } from "@/components/users/CreateUserModal";
 import { useDebounce } from "@/hooks/useDebounce";
 import Link from "next/link";
+import { Table, Input, Select, Tag, Button, Space } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import type { UserResponse } from "@/types/api";
+import { SearchOutlined } from "@ant-design/icons";
+
+const { Option } = Select;
 
 export default function UsersPage() {
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [drawerUser, setDrawerUser] = useState<{ id: string; username: string } | null>(null);
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const q = useDebounce(searchInput, 400);
 
   const { data, isLoading, error } = useUsers(page, q || undefined);
   const list: UserResponse[] = data?.content ?? [];
-  const totalPages = data?.totalPages ?? 1;
   const err = error as Error | null;
+
+  // Local filtering for status and role since API doesn't support them directly yet
+  const filteredList = useMemo(() => {
+    return list.filter((u) => {
+      if (statusFilter !== "ALL") {
+        if (statusFilter === "DELETED" && !u.deleted) return false;
+        if (statusFilter === "LOCKED" && (u.deleted || !u.locked)) return false;
+        if (statusFilter === "ACTIVE" && (u.deleted || u.locked)) return false;
+      }
+      if (roleFilter !== "ALL") {
+        if (!u.roles.some((r) => r.name === roleFilter)) return false;
+      }
+      return true;
+    });
+  }, [list, statusFilter, roleFilter]);
 
   function handleSearch(val: string) {
     setSearchInput(val);
     setPage(1);
   }
 
+  const columns: ColumnsType<UserResponse> = [
+    {
+      title: "Username",
+      dataIndex: "username",
+      key: "username",
+      render: (text) => <span className="font-medium">{text}</span>,
+    },
+    {
+      title: "Full Name",
+      dataIndex: "fullName",
+      key: "fullName",
+      render: (text) => <span className="text-muted-foreground">{text ?? "—"}</span>,
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      render: (text) => <span className="text-xs text-muted-foreground">{text}</span>,
+    },
+    {
+      title: "Roles",
+      key: "roles",
+      render: (_, record) => (
+        <Space wrap>
+          {record.roles.map((r) => {
+            let color = "default";
+            if (r.name === "SYSTEM_ADMIN") color = "volcano";
+            if (r.name === "BUSINESS_ADMIN") color = "purple";
+            return (
+              <Tag color={color} key={r.name}>
+                {r.name}
+              </Tag>
+            );
+          })}
+        </Space>
+      ),
+    },
+    {
+      title: "Status",
+      key: "status",
+      render: (_, record) => {
+        if (record.deleted) return <Tag>Đã xóa</Tag>;
+        if (record.locked) return <Tag color="warning">Bị khóa</Tag>;
+        return <Tag color="success">Active</Tag>;
+      },
+    },
+    {
+      title: "Credits",
+      dataIndex: "credits",
+      key: "credits",
+      render: (val) => <span className="tabular-nums">{val}</span>,
+    },
+    {
+      title: "Action",
+      key: "action",
+      align: "right",
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => setDrawerUser({ id: record.id, username: record.username })}
+          >
+            Activity
+          </Button>
+          <Link href={`/dashboard/system/users/${record.id}`}>
+            <Button type="link" size="small">
+              Details
+            </Button>
+          </Link>
+        </Space>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold">Người dùng</h1>
+          <h1 className="text-xl font-semibold">Users</h1>
           {data?.totalElements != null && (
             <p className="mt-0.5 text-sm text-muted-foreground">
-              {data.totalElements.toLocaleString()} tài khoản
+              {data.totalElements.toLocaleString()} accounts
             </p>
           )}
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <input
-            id="users-search"
-            type="text"
+        {/* Search & Filters */}
+        <div className="flex gap-3 items-center flex-wrap">
+          <Button type="primary" onClick={() => setIsCreateModalOpen(true)}>
+            Tạo Người Dùng
+          </Button>
+          <Select
+            value={roleFilter}
+            onChange={(val) => { setRoleFilter(val); setPage(1); }}
+            style={{ width: 150 }}
+            options={[
+              { value: "ALL", label: "All Roles" },
+              { value: "SYSTEM_ADMIN", label: "System Admin" },
+              { value: "BUSINESS_ADMIN", label: "Business Admin" },
+              { value: "USER", label: "User" },
+            ]}
+          />
+          <Select
+            value={statusFilter}
+            onChange={(val) => { setStatusFilter(val); setPage(1); }}
+            style={{ width: 130 }}
+            options={[
+              { value: "ALL", label: "All Status" },
+              { value: "ACTIVE", label: "Active" },
+              { value: "LOCKED", label: "Locked" },
+              { value: "DELETED", label: "Deleted" },
+            ]}
+          />
+          <Input.Search
+            placeholder="Search username or email..."
             value={searchInput}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Tìm username hoặc email…"
-            className="w-64 rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            style={{ width: 250 }}
+            allowClear
           />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-            🔍
-          </span>
         </div>
       </div>
 
       <QueryState isLoading={isLoading} error={err}>
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="bg-muted/60">
-              <tr>
-                <th className="px-4 py-3 font-medium">Username</th>
-                <th className="px-4 py-3 font-medium">Họ tên</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Vai trò</th>
-                <th className="px-4 py-3 font-medium">Trạng thái</th>
-                <th className="px-4 py-3 font-medium">Credits</th>
-                <th className="px-4 py-3 font-medium" />
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((u) => (
-                <tr key={u.id} className="border-t border-border transition hover:bg-muted/20">
-                  <td className="px-4 py-3 font-medium">{u.username}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{u.fullName ?? "—"}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{u.email}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {u.roles.map((r) => (
-                        <span
-                          key={r.name}
-                          className={[
-                            "rounded-full px-2 py-0.5 text-xs font-semibold",
-                            r.name === "SYSTEM_ADMIN"
-                              ? "bg-red-500/10 text-red-600"
-                              : r.name === "BUSINESS_ADMIN"
-                              ? "bg-violet-500/10 text-violet-600"
-                              : "bg-muted text-muted-foreground",
-                          ].join(" ")}
-                        >
-                          {r.name}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    {u.isDeleted ? (
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                        Đã xóa
-                      </span>
-                    ) : u.isLocked ? (
-                      <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-600">
-                        Khóa
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-600">
-                        Hoạt động
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 tabular-nums">{u.credits}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-3">
-                      <button
-                        id={`user-activity-${u.id}`}
-                        onClick={() => setDrawerUser({ id: u.id, username: u.username })}
-                        className="text-xs font-medium text-muted-foreground underline hover:text-foreground"
-                      >
-                        Activity
-                      </button>
-                      <Link
-                        href={`/dashboard/system/users/${u.id}`}
-                        className="text-xs font-medium text-primary underline hover:opacity-75"
-                      >
-                        Chi tiết
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {list.length === 0 && (
-            <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-              {q ? `Không tìm thấy "${q}".` : "Không có dữ liệu."}
-            </p>
-          )}
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Trang {page} / {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => p - 1)}
-                disabled={page === 1}
-                className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition hover:bg-accent disabled:opacity-40"
-              >
-                ← Trước
-              </button>
-              <button
-                onClick={() => setPage((p) => p + 1)}
-                disabled={page === totalPages}
-                className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition hover:bg-accent disabled:opacity-40"
-              >
-                Sau →
-              </button>
-            </div>
-          </div>
-        )}
+        <Table
+          dataSource={filteredList}
+          columns={columns}
+          rowKey="id"
+          bordered={false}
+          pagination={{
+            current: page,
+            pageSize: 20,
+            total: data?.totalElements || 0,
+            onChange: setPage,
+            showSizeChanger: false,
+          }}
+        />
       </QueryState>
 
       {/* User Activity Log Drawer */}
@@ -172,6 +198,12 @@ export default function UsersPage() {
           onClose={() => setDrawerUser(null)}
         />
       )}
+
+      {/* Create User Modal */}
+      <CreateUserModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   );
 }

@@ -1,3 +1,6 @@
+import { Table, Tag } from "antd";
+import type { ColumnsType } from "antd/es/table";
+
 interface ModerationAction {
   id: string;
   actionType: string;
@@ -11,48 +14,54 @@ interface Props {
 }
 
 export function ModerationHistoryTable({ history }: Props) {
-  if (history.length === 0) {
-    return (
-      <div className="rounded-xl border border-border p-6">
-        <h3 className="mb-4 font-semibold">Lịch sử kiểm duyệt</h3>
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Chưa có hành động kiểm duyệt nào
-        </p>
-      </div>
-    );
-  }
+  const columns: ColumnsType<ModerationAction> = [
+    {
+      title: "Time",
+      dataIndex: "createdAt",
+      key: "time",
+      render: (val) => new Date(val).toLocaleDateString("en-US"),
+    },
+    {
+      title: "Action",
+      dataIndex: "actionType",
+      key: "action",
+      render: (val) => {
+        let color = "default";
+        if (val === "BAN_USER") color = "error";
+        else if (val === "WARN_USER") color = "warning";
+        else if (val === "DELETE_POST") color = "magenta";
+        
+        return <Tag color={color}>{val}</Tag>;
+      },
+    },
+    {
+      title: "Reason",
+      dataIndex: "reason",
+      key: "reason",
+      render: (val) => (
+        <span className="text-muted-foreground">
+          {val.length > 50 ? `${val.slice(0, 50)}...` : val}
+        </span>
+      ),
+    },
+    {
+      title: "Handled By",
+      dataIndex: "handledBy",
+      key: "handledBy",
+    },
+  ];
 
   return (
     <div className="rounded-xl border border-border p-6">
-      <h3 className="mb-4 font-semibold">Lịch sử kiểm duyệt</h3>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-muted/80">
-            <tr>
-              <th className="px-4 py-3 font-medium">Thời gian</th>
-              <th className="px-4 py-3 font-medium">Hành động</th>
-              <th className="px-4 py-3 font-medium">Lý do</th>
-              <th className="px-4 py-3 font-medium">Người xử lý</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.map((action) => (
-              <tr key={action.id} className="border-t border-border">
-                <td className="px-4 py-3">
-                  {new Date(action.createdAt).toLocaleDateString("vi-VN")}
-                </td>
-                <td className="px-4 py-3 font-medium">{action.actionType}</td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {action.reason.length > 50
-                    ? `${action.reason.slice(0, 50)}...`
-                    : action.reason}
-                </td>
-                <td className="px-4 py-3">{action.handledBy}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <h3 className="mb-4 font-semibold">Moderation History</h3>
+      <Table
+        dataSource={history}
+        columns={columns}
+        rowKey="id"
+        bordered={false}
+        pagination={false}
+        locale={{ emptyText: "No moderation actions yet" }}
+      />
     </div>
   );
 }

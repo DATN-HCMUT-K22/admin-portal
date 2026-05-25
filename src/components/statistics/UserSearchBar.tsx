@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Select } from "antd";
 import { useSearchUsers } from "@/hooks/use-admin-queries";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Props {
   onSelect: (userId: string, username: string) => void;
@@ -9,48 +11,48 @@ interface Props {
 
 export function UserSearchBar({ onSelect }: Props) {
   const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [showResults, setShowResults] = useState(false);
+  const debouncedQuery = useDebounce(query, 400);
+  
+  const { data: results = [], isLoading } = useSearchUsers(debouncedQuery);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query), 300);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const { data: results = [] } = useSearchUsers(debouncedQuery);
+  const options = results.map(user => ({
+    label: (
+      <div className="flex flex-col py-1">
+        <span className="font-medium leading-none mb-1">{user.username}</span>
+        <span className="text-xs text-muted-foreground leading-none">
+          {user.fullName || "Chưa cập nhật tên"}
+        </span>
+      </div>
+    ),
+    value: user.id,
+    user
+  }));
 
   return (
-    <div className="relative">
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setShowResults(true);
-        }}
-        onBlur={() => setTimeout(() => setShowResults(false), 200)}
-        placeholder="Tìm kiếm người dùng (username hoặc tên)..."
-        className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm"
-      />
-
-      {showResults && results.length > 0 && (
-        <div className="absolute top-full z-10 mt-2 w-full rounded-lg border border-border bg-background shadow-lg">
-          {results.map((user) => (
-            <button
-              key={user.id}
-              onClick={() => {
-                onSelect(user.id, user.username);
-                setQuery("");
-                setShowResults(false);
-              }}
-              className="w-full px-4 py-3 text-left transition hover:bg-accent"
-            >
-              <div className="font-medium">{user.username}</div>
-              <div className="text-sm text-muted-foreground">{user.fullName}</div>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <Select
+      showSearch
+      allowClear
+      placeholder="Tìm kiếm người dùng (nhập username hoặc tên)..."
+      className="w-full max-w-md"
+      size="large"
+      loading={isLoading}
+      filterOption={false}
+      onSearch={setQuery}
+      onClear={() => {
+        setQuery("");
+        onSelect("", "");
+      }}
+      onSelect={(value, option) => {
+        onSelect(value, option.user.username);
+      }}
+      options={options}
+      notFoundContent={
+        isLoading 
+          ? "Đang tìm kiếm..." 
+          : debouncedQuery.length >= 2 
+            ? "Không tìm thấy người dùng nào" 
+            : "Nhập ít nhất 2 ký tự để tìm kiếm"
+      }
+    />
   );
 }

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { useAdminStore } from "@/stores/admin-store";
+import { message } from "antd";
 import {
   canAccessDashboardPath,
   canUseAdminPortal,
@@ -23,11 +24,17 @@ export function DashboardAuthGate({
   const needLogin = !isLoading && !token?.trim();
 
   useEffect(() => {
-    if (needLogin) {
+    const isLocked = user && (user.locked || (user as any).isLocked);
+
+    if (isLocked) {
+      message.error("Tài khoản của bạn đã bị khóa");
+      logout();
+      router.replace("/login");
+    } else if (needLogin) {
       const q = pathname ? `?returnUrl=${encodeURIComponent(pathname)}` : "";
       router.replace(`/login${q}`);
     }
-  }, [needLogin, pathname, router]);
+  }, [user, needLogin, pathname, router, logout]);
 
   if (isLoading) {
     return <DashboardSkeleton />;

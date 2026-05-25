@@ -5,44 +5,73 @@ import { useReports } from "@/hooks/use-admin-queries";
 import { QueryState } from "@/components/query-state";
 import { normalizeItems } from "@/lib/list-utils";
 import type { ReportDetail } from "@/types/api";
+import { Table, Tag, Typography, Button } from "antd";
+import type { ColumnsType } from "antd/es/table";
+
+const { Title } = Typography;
 
 export default function ReportsPage() {
   const { data, isLoading, error } = useReports();
-  const list = normalizeItems(
-    data as ReportDetail[] | { items: ReportDetail[] } | undefined
-  );
+  const list = normalizeItems<ReportDetail>(data as any);
   const err = error as Error | null;
+
+  const columns: ColumnsType<ReportDetail> = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      render: (text) => <Typography.Text code>{text.split("-")[0]}...</Typography.Text>,
+    },
+    {
+      title: "Loại vi phạm",
+      dataIndex: "reason",
+      key: "reason",
+    },
+    {
+      title: "Loại nội dung",
+      dataIndex: "reportedEntityType",
+      key: "reportedEntityType",
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => {
+        let color = "default";
+        if (status === "PENDING") color = "warning";
+        else if (status === "PROCESSED") color = "success";
+        return <Tag color={color}>{status}</Tag>;
+      },
+    },
+    {
+      title: "Thời gian",
+      dataIndex: "created_at",
+      key: "created_at",
+      render: (val) => new Date(val).toLocaleString("vi-VN"),
+    },
+    {
+      title: "Hành động",
+      key: "action",
+      render: (_, record) => (
+        <Link href={`/dashboard/moderation/reports/${record.id}`}>
+          <Button type="link" size="small">
+            Xử lý
+          </Button>
+        </Link>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Báo cáo</h1>
+      <Title level={4} style={{ margin: 0 }}>Báo cáo vi phạm</Title>
       <QueryState isLoading={isLoading} error={err}>
-        <ul className="space-y-2">
-          {list.map((r) => (
-            <li
-              key={r.id}
-              className="flex items-center justify-between rounded-xl border border-border px-4 py-3"
-            >
-              <div>
-                <span className="font-mono text-xs text-muted-foreground">{r.id}</span>
-                {r.status != null && (
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    — {String(r.status)}
-                  </span>
-                )}
-              </div>
-              <Link
-                href={`/dashboard/moderation/reports/${r.id}`}
-                className="text-sm font-medium underline"
-              >
-                Xử lý
-              </Link>
-            </li>
-          ))}
-        </ul>
-        {list.length === 0 && (
-          <p className="text-sm text-muted-foreground">Không có báo cáo.</p>
-        )}
+        <Table<ReportDetail>
+          dataSource={list}
+          columns={columns}
+          rowKey="id"
+          pagination={{ pageSize: 15 }}
+        />
       </QueryState>
     </div>
   );

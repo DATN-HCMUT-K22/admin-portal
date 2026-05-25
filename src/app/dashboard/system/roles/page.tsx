@@ -1,172 +1,303 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateRole, usePermissions, useRoles } from "@/hooks/use-admin-queries";
+import { 
+  useCreateRole, 
+  useDeleteRole,
+  usePermissions, 
+  useRoles,
+  useCreatePermission,
+  useDeletePermission
+} from "@/hooks/use-admin-queries";
 import { QueryState } from "@/components/query-state";
-import { roleCreateSchema } from "@/lib/schemas/admin-forms";
 import { usePermissions as usePermissionCheck } from "@/components/auth/PermissionGate";
-import type { z } from "zod";
-import type { RoleWithPermissions } from "@/types/api";
-import { normalizeItems } from "@/lib/list-utils";
+import type { RoleWithPermissions, PermissionResponse } from "@/types/api";
+import { Form, Input, Button, Card, Table, Tag, Space, Alert, Typography, Result, Tabs, Popconfirm, Select, message } from "antd";
+import type { ColumnsType } from "antd/es/table";
 
-type RoleForm = z.infer<typeof roleCreateSchema>;
+const { Title, Paragraph } = Typography;
 
 export default function RolesPage() {
   const { isAdmin } = usePermissionCheck();
+  
+  // Queries
   const { data: roles, isLoading: loadingRoles, error: errRoles } = useRoles();
-  const { data: perms, isLoading: loadingPerms, error: errPerms } =
-    usePermissions();
-  const createMut = useCreateRole();
+  const { data: perms, isLoading: loadingPerms, error: errPerms } = usePermissions();
+  
+  // Mutations
+  const createRoleMut = useCreateRole();
+  const deleteRoleMut = useDeleteRole();
+  const createPermMut = useCreatePermission();
+  const deletePermMut = useDeletePermission();
+  
+  // Forms
+  const [roleForm] = Form.useForm();
+  const [permForm] = Form.useForm();
 
-  // Access control: ADMIN only
   if (!isAdmin) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold text-destructive">Không có quyền truy cập</h1>
-          <p className="mt-2 text-muted-foreground">
-            Chỉ ADMIN mới có thể quản lý vai trò và quyền hạn.
-          </p>
-        </div>
+        <Result
+          status="403"
+          title="Không có quyền truy cập"
+          subTitle="Chỉ ADMIN mới có thể quản lý vai trò và quyền hạn."
+        />
       </div>
     );
   }
 
-  const form = useForm<RoleForm>({
-    resolver: zodResolver(roleCreateSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      permissions: "",
-    },
-  });
-
   const roleList = Array.isArray(roles) ? roles : [];
-  const permList = Array.isArray(perms)
-    ? (perms as (string | { name: string })[])
-    : [];
-  const permStrings = permList.map((p) =>
-    typeof p === "string" ? p : (p as { name: string }).name
+  const permList = Array.isArray(perms) ? perms : [];
+
+  // --- Handlers ---
+
+  const handleCreateRole = async (values: { name: string; description: string; permissions: string[] }) => {
+    try {
+      await createRoleMut.mutateAsync({
+        name: values.name,
+        description: values.description || "",
+        permissions: values.permissions || [],
+      });
+      roleForm.resetFields();
+      message.success("Tạo vai trò thành công");
+    } catch (e: any) {
+      message.error(e.message || "Lỗi khi tạo vai trò");
+    }
+  };
+
+  const handleDeleteRole = async (name: string) => {
+    try {
+      await deleteRoleMut.mutateAsync(name);
+      message.success("Đã xóa vai trò");
+    } catch (e: any) {
+      message.error(e.message || "Lỗi khi xóa vai trò");
+    }
+  };
+
+  const handleCreatePerm = async (values: { name: string; description: string }) => {
+    try {
+      await createPermMut.mutateAsync({
+        name: values.name,
+        description: values.description || "",
+      });
+      permForm.resetFields();
+      message.success("Tạo quyền hạn thành công");
+    } catch (e: any) {
+      message.error(e.message || "Lỗi khi tạo quyền hạn");
+    }
+  };
+
+  const handleDeletePerm = async (name: string) => {
+    try {
+      await deletePermMut.mutateAsync(name);
+      message.success("Đã xóa quyền hạn");
+    } catch (e: any) {
+      message.error(e.message || "Lỗi khi xóa quyền hạn");
+    }
+  };
+
+  // --- Columns ---
+
+  const roleColumns: ColumnsType<RoleWithPermissions> = [
+    {
+      title: "Vai trò",
+      dataIndex: "name",
+      key: "name",
+      render: (text) => <strong>{text}</strong>,
+    },
+    {
+      title: "Mô tả",
+      dataIndex: "description",
+      key: "description",
+    },
+    {
+      title: "Quyền hạn",
+      dataIndex: "permissions",
+      key: "permissions",
+      render: (perms: PermissionResponse[]) => (
+        <Space wrap>
+          {perms?.map((p) => (
+            <Tag color="blue" key={p.name}>
+              {p.name}
+            </Tag>
+          ))}
+        </Space>
+      ),
+    },
+    {
+      title: "Thao tác",
+      key: "action",
+      render: (_, record) => (
+        <Popconfirm
+          title="Xóa vai trò"
+          description="Bạn có chắc chắn muốn xóa vai trò này? Việc này có thể ảnh hưởng đến người dùng hiện tại."
+          onConfirm={() => handleDeleteRole(record.name)}
+          okText="Xóa"
+          cancelText="Hủy"
+          okButtonProps={{ danger: true, loading: deleteRoleMut.isPending }}
+        >
+          <Button danger type="link" size="small">Xóa</Button>
+        </Popconfirm>
+      ),
+    }
+  ];
+
+  const permColumns: ColumnsType<PermissionResponse> = [
+    {
+      title: "Quyền hạn",
+      dataIndex: "name",
+      key: "name",
+      render: (text) => <Tag color="purple">{text}</Tag>,
+    },
+    {
+      title: "Mô tả",
+      dataIndex: "description",
+      key: "description",
+    },
+    {
+      title: "Thao tác",
+      key: "action",
+      render: (_, record) => (
+        <Popconfirm
+          title="Xóa quyền hạn"
+          description="Xóa quyền hạn này có thể ảnh hưởng đến các vai trò đang sử dụng nó. Tiếp tục?"
+          onConfirm={() => handleDeletePerm(record.name)}
+          okText="Xóa"
+          cancelText="Hủy"
+          okButtonProps={{ danger: true, loading: deletePermMut.isPending }}
+        >
+          <Button danger type="link" size="small">Xóa</Button>
+        </Popconfirm>
+      ),
+    }
+  ];
+
+  // --- UI Items ---
+
+  const roleTab = (
+    <div className="space-y-6">
+      <Card title="Tạo Vai Trò Mới" size="small">
+        <Form
+          form={roleForm}
+          layout="vertical"
+          onFinish={handleCreateRole}
+          style={{ maxWidth: 600 }}
+        >
+          <Form.Item
+            label="Tên vai trò (VD: MODERATOR)"
+            name="name"
+            rules={[{ required: true, message: "Vui lòng nhập tên vai trò" }]}
+          >
+            <Input placeholder="Nhập tên vai trò" />
+          </Form.Item>
+          
+          <Form.Item
+            label="Mô tả"
+            name="description"
+            rules={[{ required: true, message: "Vui lòng nhập mô tả" }]}
+          >
+            <Input.TextArea placeholder="Mô tả chi tiết" rows={2} />
+          </Form.Item>
+          
+          <Form.Item
+            label="Quyền hạn"
+            name="permissions"
+            rules={[{ required: true, message: "Vui lòng chọn ít nhất 1 quyền hạn" }]}
+          >
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="Chọn các quyền hạn"
+              options={permList.map(p => ({ label: p.name, value: p.name }))}
+              loading={loadingPerms}
+            />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Button type="primary" htmlType="submit" loading={createRoleMut.isPending}>
+              {createRoleMut.isPending ? "Đang tạo…" : "Tạo vai trò"}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Card>
+
+      <Card title="Danh sách Vai Trò" size="small" styles={{ body: { padding: 0 } }}>
+        <QueryState isLoading={loadingRoles} error={errRoles as Error | null}>
+          <Table
+            dataSource={roleList}
+            columns={roleColumns}
+            rowKey="name"
+            pagination={{ defaultPageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] }}
+          />
+        </QueryState>
+      </Card>
+    </div>
   );
 
-  const loadError = (errRoles ?? errPerms) as Error | null;
-  const loading = loadingRoles || loadingPerms;
+  const permTab = (
+    <div className="space-y-6">
+      <Card title="Tạo Quyền Hạn Mới" size="small">
+        <Form
+          form={permForm}
+          layout="vertical"
+          onFinish={handleCreatePerm}
+          style={{ maxWidth: 600 }}
+        >
+          <Form.Item
+            label="Tên quyền hạn (VD: MODERATE_COMMENTS)"
+            name="name"
+            rules={[{ required: true, message: "Vui lòng nhập tên quyền hạn" }]}
+          >
+            <Input placeholder="Nhập tên quyền hạn" />
+          </Form.Item>
+          
+          <Form.Item
+            label="Mô tả"
+            name="description"
+            rules={[{ required: true, message: "Vui lòng nhập mô tả" }]}
+          >
+            <Input.TextArea placeholder="Mô tả chi tiết" rows={2} />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Button type="primary" htmlType="submit" loading={createPermMut.isPending}>
+              {createPermMut.isPending ? "Đang tạo…" : "Tạo quyền hạn"}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Card>
+
+      <Card title="Danh sách Quyền Hạn" size="small" styles={{ body: { padding: 0 } }}>
+        <QueryState isLoading={loadingPerms} error={errPerms as Error | null}>
+          <Table
+            dataSource={permList}
+            columns={permColumns}
+            rowKey="name"
+            pagination={{ defaultPageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] }}
+          />
+        </QueryState>
+      </Card>
+    </div>
+  );
 
   return (
-    <div className="space-y-10">
-      <div>
-        <h1 className="text-xl font-semibold">Vai trò & quyền</h1>
-      </div>
-
-      <section>
-        <h2 className="mb-3 font-medium">Tạo role</h2>
-        <form
-          className="max-w-lg space-y-3"
-          onSubmit={form.handleSubmit((v) =>
-            createMut.mutateAsync({
-              name: v.name,
-              description: v.description,
-              permissions: v.permissions
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean),
-            })
-          )}
-        >
-          <input
-            {...form.register("name")}
-            placeholder="Tên role"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-          />
-          <textarea
-            {...form.register("description")}
-            placeholder="Mô tả"
-            rows={2}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-          />
-          <input
-            {...form.register("permissions")}
-            placeholder="permission1, permission2"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-          />
-          {form.formState.errors.name && (
-            <p className="text-sm text-destructive">
-              {form.formState.errors.name.message}
-            </p>
-          )}
-          {form.formState.errors.description && (
-            <p className="text-sm text-destructive">
-              {form.formState.errors.description.message}
-            </p>
-          )}
-          {form.formState.errors.permissions && (
-            <p className="text-sm text-destructive">
-              {form.formState.errors.permissions.message}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={createMut.isPending}
-            className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
-          >
-            {createMut.isPending ? "Đang tạo…" : "Tạo role"}
-          </button>
-          {createMut.isError && (
-            <p className="text-sm text-destructive">
-              {(createMut.error as Error).message}
-            </p>
-          )}
-          {createMut.isSuccess && (
-            <p className="text-sm text-primary">Đã tạo.</p>
-          )}
-        </form>
-      </section>
-
-      <section>
-        <h2 className="mb-3 font-medium">Danh sách permission</h2>
-        <QueryState isLoading={loading} error={loadError}>
-          <ul className="flex flex-wrap gap-2">
-            {permStrings.map((p) => (
-              <li
-                key={p}
-                className="rounded-md bg-muted px-2 py-1 font-mono text-xs"
-              >
-                {p}
-              </li>
-            ))}
-          </ul>
-          {permStrings.length === 0 && (
-            <p className="text-sm text-muted-foreground">Không có dữ liệu.</p>
-          )}
-        </QueryState>
-      </section>
-
-      <section>
-        <h2 className="mb-3 font-medium">Các role hiện có</h2>
-        <QueryState isLoading={loadingRoles} error={errRoles as Error | null}>
-          <ul className="space-y-3">
-            {roleList.map((r: RoleWithPermissions) => (
-              <li
-                key={r.name + (r.id ?? "")}
-                className="rounded-xl border border-border p-4"
-              >
-                <p className="font-medium">{r.name}</p>
-                {r.description && (
-                  <p className="text-sm text-muted-foreground">
-                    {r.description}
-                  </p>
-                )}
-                {Array.isArray(r.permissions) && (
-                  <p className="mt-2 font-mono text-xs text-muted-foreground">
-                    {r.permissions.join(", ")}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </QueryState>
-      </section>
+    <div className="space-y-6">
+      <Title level={4} style={{ margin: 0 }}>Quản lý Vai trò & Quyền hạn</Title>
+      
+      <Tabs
+        defaultActiveKey="roles"
+        items={[
+          {
+            key: "roles",
+            label: "Vai Trò (Roles)",
+            children: roleTab,
+          },
+          {
+            key: "permissions",
+            label: "Quyền Hạn (Permissions)",
+            children: permTab,
+          },
+        ]}
+      />
     </div>
   );
 }

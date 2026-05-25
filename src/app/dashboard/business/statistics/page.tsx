@@ -8,6 +8,9 @@ import { StatCard } from "@/components/statistics/StatCard";
 import { ActivityChart } from "@/components/statistics/ActivityChart";
 import { ViolationPieChart } from "@/components/statistics/ViolationPieChart";
 import { ModerationHistoryTable } from "@/components/statistics/ModerationHistoryTable";
+import { Typography, Row, Col, Result } from "antd";
+
+const { Title } = Typography;
 
 export default function StatisticsPage() {
   const [selectedUserId, setSelectedUserId] = useState<string>("");
@@ -29,7 +32,7 @@ export default function StatisticsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Thống kê người dùng</h1>
+      <Title level={4}>Thống kê người dùng</Title>
 
       <UserSearchBar
         onSelect={(userId, username) => {
@@ -49,32 +52,44 @@ export default function StatisticsPage() {
               </div>
 
               {/* Stat Cards Grid */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard
-                  title="Tổng bài viết"
-                  value={stats.activity.totalPosts}
-                  subtitle={`${stats.activity.avgPostsPerWeek.toFixed(1)} bài/tuần`}
-                />
-                <StatCard
-                  title="Tổng bình luận"
-                  value={stats.activity.totalComments}
-                />
-                <StatCard
-                  title="Lượt thích nhận được"
-                  value={stats.activity.likesReceived}
-                />
-                <StatCard
-                  title="Vi phạm xác nhận"
-                  value={stats.violations.confirmedViolations}
-                  subtitle={`${stats.violations.warnings} cảnh báo`}
-                />
-              </div>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} md={12} lg={6}>
+                  <StatCard
+                    title="Tổng bài viết"
+                    value={stats.activity.totalPosts}
+                    subtitle={`${stats.activity.avgPostsPerWeek.toFixed(1)} bài/tuần`}
+                  />
+                </Col>
+                <Col xs={24} md={12} lg={6}>
+                  <StatCard
+                    title="Tổng bình luận"
+                    value={stats.activity.totalComments}
+                  />
+                </Col>
+                <Col xs={24} md={12} lg={6}>
+                  <StatCard
+                    title="Lượt thích nhận được"
+                    value={stats.activity.likesReceived}
+                  />
+                </Col>
+                <Col xs={24} md={12} lg={6}>
+                  <StatCard
+                    title="Vi phạm xác nhận"
+                    value={stats.violations.confirmedViolations}
+                    subtitle={`${stats.violations.warnings} cảnh báo`}
+                  />
+                </Col>
+              </Row>
 
               {/* Charts Grid */}
-              <div className="grid gap-6 lg:grid-cols-2">
-                <ActivityChart data={stats.timeline} />
-                <ViolationPieChart violations={violationBreakdown} />
-              </div>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} lg={12}>
+                  <ActivityChart data={stats.timeline} />
+                </Col>
+                <Col xs={24} lg={12}>
+                  <ViolationPieChart violations={violationBreakdown} />
+                </Col>
+              </Row>
 
               {/* Moderation History */}
               <ModerationHistoryTable history={stats.moderationHistory} />
@@ -84,11 +99,11 @@ export default function StatisticsPage() {
       )}
 
       {!selectedUserId && (
-        <div className="rounded-xl border border-border p-12 text-center">
-          <p className="text-muted-foreground">
-            Tìm kiếm người dùng để xem thống kê
-          </p>
-        </div>
+        <Result
+          icon={<div />}
+          title="Tìm kiếm người dùng để xem thống kê"
+          style={{ background: "#fafafa", border: "1px solid #f0f0f0", borderRadius: 8 }}
+        />
       )}
     </div>
   );

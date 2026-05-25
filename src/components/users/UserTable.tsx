@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import type { UserAdminView } from "@/types/api";
+import { Table, Tag, Button } from "antd";
+import type { ColumnsType } from "antd/es/table";
 
 interface Props {
   users: UserAdminView[];
@@ -7,52 +11,58 @@ interface Props {
 }
 
 export function UserTable({ users, showActions = true }: Props) {
+  const columns: ColumnsType<UserAdminView> = [
+    {
+      title: "Username",
+      dataIndex: "username",
+      key: "username",
+    },
+    {
+      title: "Full Name",
+      dataIndex: "fullName",
+      key: "fullName",
+      render: (text) => text ?? "—",
+    },
+    {
+      title: "Status",
+      key: "status",
+      render: (_: any, record: UserAdminView) => {
+        if (record.deleted) return <Tag>Deleted</Tag>;
+        if (record.locked) return <Tag color="warning">Locked</Tag>;
+        return <Tag color="success">Active</Tag>;
+      },
+    },
+    {
+      title: "Credits",
+      dataIndex: "credits",
+      key: "credits",
+    },
+    ...(showActions
+      ? [
+          {
+            title: "",
+            key: "action",
+            align: "right" as const,
+            render: (_: any, record: UserAdminView) => (
+              <Link href={`/dashboard/system/users/${record.id}`}>
+                <Button type="link" size="small">
+                  Details
+                </Button>
+              </Link>
+            ),
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full min-w-[640px] text-left text-sm">
-        <thead className="bg-muted/80">
-          <tr>
-            <th className="px-4 py-3 font-medium">Username</th>
-            <th className="px-4 py-3 font-medium">Họ tên</th>
-            <th className="px-4 py-3 font-medium">Trạng thái</th>
-            <th className="px-4 py-3 font-medium">Credits</th>
-            {showActions && <th className="px-4 py-3 font-medium" />}
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => (
-            <tr key={u.id} className="border-t border-border">
-              <td className="px-4 py-3">{u.username}</td>
-              <td className="px-4 py-3">{u.fullName}</td>
-              <td className="px-4 py-3">
-                {u.isDeleted ? (
-                  <span className="text-muted-foreground">Đã xóa</span>
-                ) : u.isLocked ? (
-                  <span className="text-amber-600">Khóa</span>
-                ) : (
-                  <span className="text-primary">Hoạt động</span>
-                )}
-              </td>
-              <td className="px-4 py-3">{u.credits}</td>
-              {showActions && (
-                <td className="px-4 py-3 text-right">
-                  <Link
-                    href={`/dashboard/system/users/${u.id}`}
-                    className="font-medium text-foreground underline"
-                  >
-                    Chi tiết
-                  </Link>
-                </td>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {users.length === 0 && (
-        <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-          Không có dữ liệu.
-        </p>
-      )}
-    </div>
+    <Table
+      dataSource={users}
+      columns={columns}
+      rowKey="id"
+      bordered={false}
+      pagination={false}
+      locale={{ emptyText: "No data" }}
+    />
   );
 }

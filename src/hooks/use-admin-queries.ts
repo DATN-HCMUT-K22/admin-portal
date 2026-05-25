@@ -10,7 +10,6 @@ import * as usersApi from "@/lib/api/users";
 import * as rolesApi from "@/lib/api/roles";
 import * as reportsApi from "@/lib/api/reports";
 import * as feedbacksApi from "@/lib/api/feedbacks";
-import * as locationsApi from "@/lib/api/locations";
 import * as moderationApi from "@/lib/api/moderation";
 import * as statisticsApi from "@/lib/api/statistics";
 import * as activityLogsApi from "@/lib/api/activity-logs";
@@ -19,9 +18,9 @@ import type {
   ActivityLogParams,
   CreateUserWithRolesRequest,
   HandleReportRequest,
-  LocationBusinessMetadata,
   ModerationActionRequest,
   RoleRequest,
+  PermissionRequest,
   UserRoleUpdateRequest,
   UserStatusUpdateRequest,
 } from "@/types/api";
@@ -84,6 +83,17 @@ export function useCreateUserWithRoles() {
   });
 }
 
+export function useCreateNormalUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Omit<CreateUserWithRolesRequest, "roles">) =>
+      usersApi.createNormalUser(body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+  });
+}
+
 export function useDeleteUser() {
   const qc = useQueryClient();
   return useMutation({
@@ -115,12 +125,42 @@ export function useCreateRole() {
   });
 }
 
+export function useDeleteRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (roleId: string) => rolesApi.deleteRole(roleId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.admin.roles() });
+    },
+  });
+}
+
 export function usePermissions() {
   const token = useAdminStore((s) => s.bearerToken);
   return useQuery({
     queryKey: queryKeys.admin.permissions(),
     queryFn: () => rolesApi.listPermissions(),
     enabled: !!token?.trim(),
+  });
+}
+
+export function useCreatePermission() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: PermissionRequest) => rolesApi.createPermission(body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.admin.permissions() });
+    },
+  });
+}
+
+export function useDeletePermission() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (permissionId: string) => rolesApi.deletePermission(permissionId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.admin.permissions() });
+    },
   });
 }
 
@@ -160,9 +200,16 @@ export function useHandleReport(reportId: string) {
 // ─── Moderation ───────────────────────────────────────────────────────────────
 
 export function useModerateUser() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: ModerationActionRequest) =>
       moderationApi.moderateUser(body),
+    onSuccess: (_, variables) => {
+      void qc.invalidateQueries({
+        queryKey: ["admin", "moderation-actions", "user", variables.user_id],
+      });
+      void qc.invalidateQueries({ queryKey: ["admin", "moderation-actions"] });
+    },
   });
 }
 
@@ -215,38 +262,19 @@ export function useFeedback(id: string) {
   });
 }
 
-// ─── Locations ────────────────────────────────────────────────────────────────
-
-export function useCreateLocation() {
+export function useRespondToFeedback(id: string) {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Partial<LocationBusinessMetadata> & Record<string, unknown>) =>
-      locationsApi.createLocation(body),
+    mutationFn: (body: { description: string; status?: string }) =>
+      feedbacksApi.respondToFeedback(id, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.admin.feedback(id) });
+      void qc.invalidateQueries({ queryKey: queryKeys.admin.feedbacks() });
+    },
   });
 }
 
-export function useUpdateLocation(id: string) {
-  return useMutation({
-    mutationFn: (body: Partial<LocationBusinessMetadata> & Record<string, unknown>) =>
-      locationsApi.updateLocation(id, body),
-  });
-}
 
-export function useDeleteLocation() {
-  return useMutation({
-    mutationFn: (id: string) => locationsApi.deleteLocation(id),
-  });
-}
-
-export function useAdministrative(type?: string, country?: string) {
-  const token = useAdminStore((s) => s.bearerToken);
-  return useQuery({
-    queryKey: queryKeys.admin.administrative(type, country),
-    queryFn: () => locationsApi.listAdministrative({ type, country }),
-    enabled: !!token?.trim(),
-  });
-}
-
-// ─── Statistics ───────────────────────────────────────────────────────────────
 
 export function useUserStatistics(userId: string) {
   const token = useAdminStore((s) => s.bearerToken);
@@ -262,7 +290,10 @@ export function useSearchUsers(query: string) {
   const token = useAdminStore((s) => s.bearerToken);
   return useQuery({
     queryKey: ["admin", "users", "search", query],
-    queryFn: () => statisticsApi.searchUsers(query),
+    queryFn: async () => {
+      const res = await usersApi.searchGlobalUsers({ q: query, size: 20 });
+      return res.content;
+    },
     enabled: !!token && query.length >= 2,
     staleTime: 60_000,
   });

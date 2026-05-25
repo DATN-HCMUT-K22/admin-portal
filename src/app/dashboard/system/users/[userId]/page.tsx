@@ -9,16 +9,24 @@ import {
   useUpdateUserStatus,
   useUser,
   useUserActivityLogs,
+  useModerateUser,
+  useUserModerationHistory,
 } from "@/hooks/use-admin-queries";
 import { QueryState } from "@/components/query-state";
 import { ActivityLogTabs, getTabActions } from "@/components/activity-logs/ActivityLogTabs";
 import { LogTable } from "@/components/activity-logs/LogTable";
-import { userRolesSchema, userStatusSchema } from "@/lib/schemas/admin-forms";
+import { userRolesSchema, userStatusSchema, moderateUserSchema } from "@/lib/schemas/admin-forms";
 import type { z } from "zod";
 import type { ActivityTabKey } from "@/types/api";
+import { Table, Tag, Card, Typography, Switch, Select, Input, Avatar, Space, Descriptions, Button, Spin } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { Controller } from "react-hook-form";
+
+const { Title, Text } = Typography;
 
 type StatusForm = z.infer<typeof userStatusSchema>;
 type RolesForm = z.infer<typeof userRolesSchema>;
+type ModerationForm = z.infer<typeof moderateUserSchema>;
 
 const ROLE_OPTIONS = ["USER", "BUSINESS_ADMIN", "SYSTEM_ADMIN"];
 
@@ -30,6 +38,10 @@ export default function UserDetailPage() {
   const { data: user, isLoading, error } = useUser(userId);
   const statusMut = useUpdateUserStatus(userId);
   const rolesMut = useUpdateUserRoles(userId);
+  const moderateMut = useModerateUser();
+
+  // ── Moderation History ──
+  const { data: modHistory, isLoading: modHistoryLoading } = useUserModerationHistory(userId);
 
   // ── Activity Log ──
   const [activeTab, setActiveTab] = useState<ActivityTabKey>("all");
@@ -44,13 +56,22 @@ export default function UserDetailPage() {
 
   const statusForm = useForm<StatusForm>({
     resolver: zodResolver(userStatusSchema),
-    values: user ? { isLocked: user.isLocked } : { isLocked: false },
+    values: user ? { locked: user.locked } : { locked: false },
   });
 
   const rolesForm = useForm<RolesForm>({
     resolver: zodResolver(userRolesSchema),
     values: {
       roles: user?.roles?.map((r) => r.name).join(", ") ?? "",
+    },
+  });
+
+  const modForm = useForm<ModerationForm>({
+    resolver: zodResolver(moderateUserSchema),
+    values: {
+      user_id: userId,
+      actionType: "WARN_USER",
+      note: "",
     },
   });
 
@@ -62,110 +83,93 @@ export default function UserDetailPage() {
   const err = error as Error | null;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
-      <h1 className="text-xl font-semibold">Chi tiết người dùng</h1>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <Title level={3} style={{ margin: 0 }}>Chi tiết người dùng</Title>
 
       <QueryState isLoading={isLoading} error={err}>
         {user && (
-          <>
+          <Space direction="vertical" size="large" style={{ width: "100%" }}>
             {/* ── Profile card ── */}
-            <div className="flex items-start gap-5 rounded-xl border border-border p-5">
-              {user.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={user.avatarUrl}
-                  alt={user.username}
-                  className="h-16 w-16 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-xl font-bold text-primary">
-                  {user.username[0]?.toUpperCase()}
+            <Card>
+              <Space align="start" size="large">
+                <Avatar src={user.avatarUrl} size={64} style={{ backgroundColor: "#1890ff" }}>
+                  {!user.avatarUrl && user.username[0]?.toUpperCase()}
+                </Avatar>
+                <div>
+                  <Title level={4} style={{ margin: 0 }}>{user.username}</Title>
+                  {user.fullName && <Text type="secondary">{user.fullName}</Text>}
+                  <br />
+                  <Text type="secondary">{user.email}</Text>
+                  
+                  <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {user.roles.map((r) => (
+                      <Tag 
+                        key={r.name} 
+                        color={r.name === "SYSTEM_ADMIN" ? "red" : r.name === "BUSINESS_ADMIN" ? "purple" : "default"}
+                      >
+                        {r.name}
+                      </Tag>
+                    ))}
+                    {user.locked && <Tag color="warning">Đang khóa</Tag>}
+                    {user.deleted && <Tag>Đã xóa</Tag>}
+                  </div>
                 </div>
-              )}
-              <div className="flex-1 space-y-1">
-                <p className="text-lg font-semibold">{user.username}</p>
-                {user.fullName && (
-                  <p className="text-muted-foreground">{user.fullName}</p>
-                )}
-                <p className="text-sm text-muted-foreground">{user.email}</p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {user.roles.map((r) => (
-                    <span
-                      key={r.name}
-                      className={[
-                        "rounded-full px-2 py-0.5 text-xs font-semibold",
-                        r.name === "SYSTEM_ADMIN"
-                          ? "bg-red-500/10 text-red-600"
-                          : r.name === "BUSINESS_ADMIN"
-                          ? "bg-violet-500/10 text-violet-600"
-                          : "bg-muted text-muted-foreground",
-                      ].join(" ")}
-                    >
-                      {r.name}
-                    </span>
-                  ))}
-                  {user.isLocked && (
-                    <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-600">
-                      Đang khóa
-                    </span>
-                  )}
-                  {user.isDeleted && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      Đã xóa
-                    </span>
-                  )}
-                </div>
-              </div>
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                <dt className="text-muted-foreground">Credits</dt>
-                <dd className="font-medium tabular-nums">{user.credits}</dd>
-                <dt className="text-muted-foreground">Email xác thực</dt>
-                <dd>{user.isEmailVerified ? "✅" : "❌"}</dd>
-                <dt className="text-muted-foreground">Ngày tạo</dt>
-                <dd className="text-xs">
+              </Space>
+              
+              <Descriptions size="small" column={{ xs: 1, sm: 2 }} style={{ marginTop: 24 }}>
+                <Descriptions.Item label="Credits">
+                  <Text strong>{user.credits}</Text>
+                </Descriptions.Item>
+                <Descriptions.Item label="Email xác thực">
+                  {user.emailVerified ? "✅" : "❌"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Ngày tạo">
                   {new Date(user.created_at).toLocaleDateString("vi-VN")}
-                </dd>
-              </dl>
-            </div>
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
 
             {/* ── Lock / Unlock ── */}
-            <section className="rounded-xl border border-border p-5">
-              <h2 className="mb-4 font-semibold">Khóa / Mở khóa tài khoản</h2>
+            <Card title="Trạng thái tài khoản" size="small">
               <form
-                className="flex flex-wrap items-center gap-4"
+                className="flex items-center gap-4"
                 onSubmit={statusForm.handleSubmit((v) =>
                   statusMut.mutateAsync(v).catch(() => undefined)
                 )}
               >
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4"
-                    {...statusForm.register("isLocked")}
+                <Space>
+                  <Controller
+                    name="locked"
+                    control={statusForm.control}
+                    render={({ field }) => (
+                      <Switch 
+                        checked={field.value} 
+                        onChange={field.onChange} 
+                      />
+                    )}
                   />
-                  Khóa tài khoản này
-                </label>
-                <button
-                  type="submit"
-                  disabled={statusMut.isPending}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
+                  <Text>Khóa tài khoản này</Text>
+                </Space>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={statusMut.isPending}
                 >
-                  {statusMut.isPending ? "Đang lưu…" : "Cập nhật"}
-                </button>
+                  Cập nhật
+                </Button>
                 {statusMut.isError && (
-                  <span className="text-sm text-destructive">
+                  <Text type="danger">
                     {(statusMut.error as Error).message}
-                  </span>
+                  </Text>
                 )}
                 {statusMut.isSuccess && (
-                  <span className="text-sm text-emerald-600">✓ Đã lưu</span>
+                  <Text type="success">✓ Đã lưu</Text>
                 )}
               </form>
-            </section>
+            </Card>
 
             {/* ── Roles ── */}
-            <section className="rounded-xl border border-border p-5">
-              <h2 className="mb-4 font-semibold">Quản lý vai trò</h2>
+            <Card title="Quản lý vai trò" size="small">
               <form
                 className="space-y-4"
                 onSubmit={rolesForm.handleSubmit((v) =>
@@ -177,69 +181,168 @@ export default function UserDetailPage() {
                   })
                 )}
               >
-                <div className="flex flex-wrap gap-2">
-                  {ROLE_OPTIONS.map((role) => {
-                    const current = rolesForm
-                      .watch("roles")
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean);
-                    const active = current.includes(role);
-                    return (
-                      <button
-                        key={role}
-                        type="button"
-                        onClick={() => {
-                          const next = active
-                            ? current.filter((r) => r !== role)
-                            : [...current, role];
-                          rolesForm.setValue("roles", next.join(", "));
-                        }}
-                        className={[
-                          "rounded-full px-3 py-1 text-sm font-medium transition",
-                          active
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-border hover:bg-accent",
-                        ].join(" ")}
-                      >
-                        {role}
-                      </button>
-                    );
-                  })}
-                </div>
-                <input
-                  {...rolesForm.register("roles")}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  placeholder="USER, BUSINESS_ADMIN, SYSTEM_ADMIN"
+                <Controller
+                  name="roles"
+                  control={rolesForm.control}
+                  render={({ field }) => (
+                    <Select
+                      mode="multiple"
+                      style={{ width: '100%' }}
+                      placeholder="Chọn vai trò"
+                      value={field.value ? field.value.split(",").map(s => s.trim()).filter(Boolean) : []}
+                      onChange={(vals) => field.onChange(vals.join(", "))}
+                      options={ROLE_OPTIONS.map(r => ({ label: r, value: r }))}
+                    />
+                  )}
                 />
+                
                 {rolesForm.formState.errors.roles && (
-                  <p className="text-sm text-destructive">
+                  <Text type="danger" style={{ display: 'block' }}>
                     {rolesForm.formState.errors.roles.message}
-                  </p>
+                  </Text>
                 )}
-                <div className="flex items-center gap-4">
-                  <button
-                    type="submit"
-                    disabled={rolesMut.isPending}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
+                <div className="flex items-center gap-4 mt-4">
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={rolesMut.isPending}
                   >
-                    {rolesMut.isPending ? "Đang lưu…" : "Cập nhật vai trò"}
-                  </button>
+                    Cập nhật vai trò
+                  </Button>
                   {rolesMut.isError && (
-                    <p className="text-sm text-destructive">
+                    <Text type="danger">
                       {(rolesMut.error as Error).message}
-                    </p>
+                    </Text>
                   )}
                   {rolesMut.isSuccess && (
-                    <p className="text-sm text-emerald-600">✓ Đã cập nhật</p>
+                    <Text type="success">✓ Đã cập nhật</Text>
                   )}
                 </div>
               </form>
-            </section>
+            </Card>
+
+            {/* ── Moderation Section ── */}
+            <Card 
+              title="Kiểm duyệt người dùng" 
+              size="small" 
+              style={{ borderLeft: "4px solid #faad14" }}
+            >
+              <form
+                className="space-y-4"
+                onSubmit={modForm.handleSubmit((v) =>
+                  moderateMut.mutateAsync(v).then(() => {
+                    modForm.reset({ ...v, note: "" });
+                  }).catch(() => undefined)
+                )}
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">Hành động</label>
+                    <Controller
+                      name="actionType"
+                      control={modForm.control}
+                      render={({ field }) => (
+                        <Select
+                          style={{ width: '100%' }}
+                          value={field.value}
+                          onChange={field.onChange}
+                          options={[
+                            { value: "WARN_USER", label: "Cảnh cáo (WARN_USER)" },
+                            { value: "BAN_USER", label: "Khóa tài khoản (BAN_USER)" },
+                          ]}
+                        />
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">Lý do / Ghi chú</label>
+                    <Controller
+                      name="note"
+                      control={modForm.control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          placeholder="Nhập lý do kiểm duyệt..."
+                        />
+                      )}
+                    />
+                    {modForm.formState.errors.note && (
+                      <Text type="danger" className="text-xs">
+                        {modForm.formState.errors.note.message}
+                      </Text>
+                    )}
+                  </div>
+                </div>
+                {modForm.formState.errors.user_id && (
+                  <Text type="danger" className="text-xs block">
+                    {modForm.formState.errors.user_id.message}
+                  </Text>
+                )}
+                <div className="flex items-center gap-4 mt-4">
+                  <Button
+                    type="primary"
+                    danger
+                    htmlType="submit"
+                    loading={moderateMut.isPending}
+                  >
+                    Thực hiện kiểm duyệt
+                  </Button>
+                  {moderateMut.isError && (
+                    <Text type="danger">
+                      {(moderateMut.error as Error).message}
+                    </Text>
+                  )}
+                  {moderateMut.isSuccess && (
+                    <Text type="success">✓ Đã xử lý kiểm duyệt thành công.</Text>
+                  )}
+                </div>
+              </form>
+
+              {/* Moderation History Table */}
+              <div className="mt-8">
+                <Title level={5}>Lịch sử kiểm duyệt của người dùng</Title>
+                <Table
+                  loading={modHistoryLoading}
+                  dataSource={modHistory || []}
+                  rowKey="id"
+                  pagination={false}
+                  bordered={false}
+                  locale={{ emptyText: "Chưa có lịch sử kiểm duyệt" }}
+                  columns={[
+                    {
+                      title: "Hành động",
+                      dataIndex: "action_type",
+                      key: "action",
+                      render: (val) => (
+                        <Tag color={val === "BAN_USER" ? "error" : "warning"}>
+                          {val}
+                        </Tag>
+                      ),
+                    },
+                    {
+                      title: "Lý do",
+                      dataIndex: "note",
+                      key: "note",
+                      render: (val) => val || "-",
+                    },
+                    {
+                      title: "Người xử lý",
+                      key: "admin",
+                      render: (_, item: any) => item.admin?.username || "-",
+                    },
+                    {
+                      title: "Thời gian",
+                      dataIndex: "created_at",
+                      key: "time",
+                      render: (val) => new Date(val).toLocaleString("vi-VN"),
+                    },
+                  ]}
+                />
+              </div>
+            </Card>
 
             {/* ── Activity Log ── */}
-            <section className="rounded-xl border border-border p-5">
-              <h2 className="mb-4 font-semibold">Nhật ký hoạt động</h2>
+            <Card title="Nhật ký hoạt động" size="small">
               <div className="space-y-4">
                 <ActivityLogTabs
                   activeTab={activeTab}
@@ -247,7 +350,7 @@ export default function UserDetailPage() {
                 />
                 {logLoading ? (
                   <div className="flex h-32 items-center justify-center">
-                    <div className="h-7 w-7 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    <Spin size="large" />
                   </div>
                 ) : (
                   <LogTable
@@ -259,8 +362,8 @@ export default function UserDetailPage() {
                   />
                 )}
               </div>
-            </section>
-          </>
+            </Card>
+          </Space>
         )}
       </QueryState>
     </div>

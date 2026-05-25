@@ -13,7 +13,7 @@ export function ReportCard({ report }: Props) {
         <div>
           <h3 className="font-medium">Báo cáo #{report.id.slice(0, 8)}</h3>
           <p className="text-sm text-muted-foreground">
-            Loại vi phạm: {report.violationType}
+            Loại vi phạm: {report.reason}
           </p>
         </div>
         <ReportStatusBadge status={report.status} />
@@ -26,11 +26,11 @@ export function ReportCard({ report }: Props) {
         </div>
         <div>
           <span className="text-muted-foreground">Loại nội dung:</span>{" "}
-          <span className="font-medium">{report.contentType}</span>
+          <span className="font-medium">{report.reportedEntityType}</span>
         </div>
         <div>
           <span className="text-muted-foreground">Thời gian:</span>{" "}
-          {new Date(report.createdAt).toLocaleString("vi-VN")}
+          {new Date(report.created_at).toLocaleString("vi-VN")}
         </div>
       </div>
 

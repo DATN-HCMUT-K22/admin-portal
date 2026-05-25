@@ -6,6 +6,7 @@ import type {
   UserResponse,
   UserRoleUpdateRequest,
   UserStatusUpdateRequest,
+  UserSimpleResponse,
 } from "@/types/api";
 
 const prefix = "/api/v1/users";
@@ -29,6 +30,20 @@ export async function listUsers(params?: {
   const qs = q.toString();
   const raw = await apiFetch<unknown>(`${prefix}${qs ? `?${qs}` : ""}`);
   return unwrapData<Paginated<UserResponse>>(raw);
+}
+
+/** GET /api/v1/users/search — Global User Search */
+export async function searchGlobalUsers(params: {
+  q: string;
+  page?: number;
+  size?: number;
+}) {
+  const q = new URLSearchParams({ q: params.q });
+  if (params.page != null) q.set("page", String(params.page));
+  if (params.size != null) q.set("size", String(params.size));
+  const qs = q.toString();
+  const raw = await apiFetch<unknown>(`${prefix}/search${qs ? `?${qs}` : ""}`);
+  return unwrapData<Paginated<UserSimpleResponse>>(raw);
 }
 
 /** [SYSTEM_ADMIN] GET /api/v1/users/{userId}/admin-view — chi tiết đầy đủ */
@@ -64,6 +79,15 @@ export async function updateUserRoles(
 /** [SYSTEM_ADMIN] POST /api/v1/users/with-roles — tạo user kèm roles */
 export async function createUserWithRoles(body: CreateUserWithRolesRequest) {
   const raw = await apiFetch<unknown>(`${prefix}/with-roles`, {
+    method: "POST",
+    body,
+  });
+  return unwrapData<UserResponse>(raw);
+}
+
+/** [SYSTEM_ADMIN] POST /api/v1/users — tạo user bình thường */
+export async function createNormalUser(body: Omit<CreateUserWithRolesRequest, "roles">) {
+  const raw = await apiFetch<unknown>(`${prefix}`, {
     method: "POST",
     body,
   });

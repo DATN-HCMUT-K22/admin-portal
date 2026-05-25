@@ -1,17 +1,46 @@
 import { apiFetch } from "./client";
-import type { RoleRequest, RoleWithPermissions } from "@/types/api";
+import { unwrapData } from "./envelope";
+import type { 
+  RoleRequest, 
+  RoleWithPermissions, 
+  PermissionResponse, 
+  PermissionRequest 
+} from "@/types/api";
 
 export async function listRoles() {
-  return apiFetch<RoleWithPermissions[]>("/api/v1/roles");
+  const raw = await apiFetch<unknown>("/api/v1/roles");
+  return unwrapData<RoleWithPermissions[]>(raw);
 }
 
 export async function createRole(body: RoleRequest) {
-  return apiFetch<unknown>("/api/v1/roles", {
+  const raw = await apiFetch<unknown>("/api/v1/roles", {
     method: "POST",
     body,
+  });
+  return unwrapData<RoleWithPermissions>(raw);
+}
+
+export async function deleteRole(roleId: string) {
+  return apiFetch<unknown>(`/api/v1/roles/${roleId}`, {
+    method: "DELETE",
   });
 }
 
 export async function listPermissions() {
-  return apiFetch<string[] | { name: string }[]>("/api/v1/permissions");
+  const raw = await apiFetch<unknown>("/api/v1/permissions");
+  return unwrapData<PermissionResponse[]>(raw);
+}
+
+export async function createPermission(body: PermissionRequest) {
+  const raw = await apiFetch<unknown>("/api/v1/permissions", {
+    method: "POST",
+    body,
+  });
+  return unwrapData<PermissionResponse>(raw);
+}
+
+export async function deletePermission(permissionId: string) {
+  return apiFetch<unknown>(`/api/v1/permissions/${permissionId}`, {
+    method: "DELETE",
+  });
 }

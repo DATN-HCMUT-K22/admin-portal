@@ -20,13 +20,7 @@ export async function getUserStatistics(
   );
 }
 
-export async function searchUsers(
-  query: string
-): Promise<Array<{ id: string; username: string; fullName: string }>> {
-  return apiFetch(`/api/v1/admin/users/search?q=${encodeURIComponent(query)}`, {
-    method: "GET",
-  });
-}
+
 
 // ============= Aggregate Analytics APIs (từ comprehensive guide) =============
 
