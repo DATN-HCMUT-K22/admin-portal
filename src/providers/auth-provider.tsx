@@ -63,8 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [logoutStore, qc]);
 
   const user = query.data;
-  const hasAdmin = paths.hasRole(user?.roles, paths.ROLE_ADMIN);
-  const hasBa = paths.hasRole(user?.roles, paths.ROLE_BA);
+  const hasAdmin = paths.hasRole(user?.roles, paths.ROLE_SYSTEM_ADMIN);
+  const hasBa = paths.hasRole(user?.roles, paths.ROLE_BUSINESS_ADMIN);
   const isLoading = !hydrated || (hasToken && query.isPending);
   const isAuthenticated = hasToken && !!user && !query.isError;
 

@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useReports } from "@/hooks/use-admin-queries";
 import { QueryState } from "@/components/query-state";
 import { normalizeItems } from "@/lib/list-utils";
-import type { ReportListItem } from "@/lib/api/reports";
+import type { ReportDetail } from "@/types/api";
 
 export default function ReportsPage() {
   const { data, isLoading, error } = useReports();
   const list = normalizeItems(
-    data as ReportListItem[] | { items: ReportListItem[] } | undefined
+    data as ReportDetail[] | { items: ReportDetail[] } | undefined
   );
   const err = error as Error | null;
 

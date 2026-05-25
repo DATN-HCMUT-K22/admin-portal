@@ -1,7 +1,16 @@
 import type { RoleRef } from "@/types/api";
 
-export const ROLE_ADMIN = "ADMIN";
-export const ROLE_BA = "BA";
+// ─── Role constants — khớp với BE (commit 9b611b4) ───────────────────────────
+export const ROLE_SYSTEM_ADMIN = "SYSTEM_ADMIN";
+export const ROLE_BUSINESS_ADMIN = "BUSINESS_ADMIN";
+export const ROLE_USER = "USER";
+
+/** @deprecated Dùng ROLE_SYSTEM_ADMIN */
+export const ROLE_ADMIN = ROLE_SYSTEM_ADMIN;
+/** @deprecated Dùng ROLE_BUSINESS_ADMIN */
+export const ROLE_BA = ROLE_BUSINESS_ADMIN;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function roleNames(roles: RoleRef[] | undefined): string[] {
   return roles?.map((r) => r.name) ?? [];
@@ -11,11 +20,11 @@ export function hasRole(roles: RoleRef[] | undefined, name: string) {
   return roleNames(roles).includes(name);
 }
 
-/** Sau đăng nhập / bootstrap: thứ tự ADMIN → BA → consumer */
+/** Sau đăng nhập / bootstrap: SYSTEM_ADMIN → hub, BUSINESS_ADMIN → business */
 export function getPostLoginRedirectPath(roles: RoleRef[]): string {
   const names = roleNames(roles);
-  if (names.includes(ROLE_ADMIN)) return "/dashboard";
-  if (names.includes(ROLE_BA)) return "/dashboard/business/locations";
+  if (names.includes(ROLE_SYSTEM_ADMIN)) return "/dashboard";
+  if (names.includes(ROLE_BUSINESS_ADMIN)) return "/dashboard/business/reports";
   return "/home";
 }
 
@@ -28,10 +37,8 @@ export function dashboardZone(pathname: string): DashboardZone {
   return "hub";
 }
 
-/** Zone cần quyền gì — hub cho phép ADMIN hoặc BA */
-export function zoneRequires(
-  zone: DashboardZone
-): "admin" | "ba" | "portal" {
+/** Zone cần quyền gì */
+export function zoneRequires(zone: DashboardZone): "admin" | "ba" | "portal" {
   if (zone === "system" || zone === "moderation") return "admin";
   if (zone === "business") return "ba";
   return "portal";
@@ -42,18 +49,18 @@ export function canAccessDashboardPath(
   roles: RoleRef[]
 ): boolean {
   const names = roleNames(roles);
-  const hasAdmin = names.includes(ROLE_ADMIN);
-  const hasBa = names.includes(ROLE_BA);
+  const hasSystemAdmin = names.includes(ROLE_SYSTEM_ADMIN);
+  const hasBusinessAdmin = names.includes(ROLE_BUSINESS_ADMIN);
   const zone = dashboardZone(pathname);
   const req = zoneRequires(zone);
 
-  if (req === "portal") return hasAdmin || hasBa;
-  if (req === "admin") return hasAdmin;
-  return hasBa;
+  if (req === "portal") return hasSystemAdmin || hasBusinessAdmin;
+  if (req === "admin") return hasSystemAdmin;
+  return hasBusinessAdmin;
 }
 
-/** USER thuần (không ADMIN/BA) không vào portal quản trị */
+/** USER thuần (không SYSTEM_ADMIN/BUSINESS_ADMIN) không vào portal */
 export function canUseAdminPortal(roles: RoleRef[]): boolean {
   const names = roleNames(roles);
-  return names.includes(ROLE_ADMIN) || names.includes(ROLE_BA);
+  return names.includes(ROLE_SYSTEM_ADMIN) || names.includes(ROLE_BUSINESS_ADMIN);
 }

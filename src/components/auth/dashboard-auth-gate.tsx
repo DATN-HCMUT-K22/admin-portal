@@ -56,7 +56,10 @@ export function DashboardAuthGate({
             className="rounded-lg border border-border px-4 py-2 text-sm"
             onClick={() => {
               logout();
-              router.replace("/login");
+              const q = pathname
+                ? `?returnUrl=${encodeURIComponent(pathname)}`
+                : "";
+              router.replace(`/login${q}`);
             }}
           >
             Đăng xuất

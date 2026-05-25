@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Enable Ant Design CSS-in-JS optimization
+  transpilePackages: ['antd', '@ant-design/icons', '@ant-design/nextjs-registry'],
+
   async redirects() {
     return [
       {

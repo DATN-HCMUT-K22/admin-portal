@@ -2,24 +2,29 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { getPostLoginRedirectPath } from "@/lib/auth/paths";
 
 export default function Home() {
   const router = useRouter();
   const { user, isLoading, hasAdmin, hasBa } = useAuth();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (isLoading || !user) return;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || isLoading || !user) return;
     if (hasAdmin || hasBa) {
       router.replace(getPostLoginRedirectPath(user.roles));
     } else {
       router.replace("/home");
     }
-  }, [isLoading, user, hasAdmin, hasBa, router]);
+  }, [mounted, isLoading, user, hasAdmin, hasBa, router]);
 
-  if (isLoading || (user && (hasAdmin || hasBa))) {
+  if (!mounted || isLoading || (user && (hasAdmin || hasBa))) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-6">
         <div className="h-10 w-48 animate-pulse rounded-lg bg-secondary" />
