@@ -1,7 +1,9 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useAdminStore } from "@/stores/admin-store";
 
-const baseURL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
+const baseURL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "")
+  .replace(/\/+$/, "")
+  .replace(/\/api\/v1$/, "");
 
 export const axiosInstance = axios.create({
   baseURL,
