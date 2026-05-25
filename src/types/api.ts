@@ -2,18 +2,17 @@
 
 // ─── Role / Auth ──────────────────────────────────────────────────────────────
 
-export type OperationalStatus =
-  | "OPERATIONAL"
-  | "CLOSED_PERMANENTLY"
-  | "CLOSED_TEMPORARILY";
-
-export type LocationType = "POI" | string;
 
 /** Role object trả về trong UserResponse.roles[] */
+export interface PermissionResponse {
+  name: string;
+  description: string;
+}
+
 export interface RoleResponse {
   name: string;
   description?: string;
-  permissions?: unknown[];
+  permissions?: PermissionResponse[];
 }
 
 /** Alias dùng chỗ cũ cần backward-compat */
@@ -53,9 +52,9 @@ export interface UserResponse {
   phoneNumber: string | null;
   dateOfBirth: string | null;     // "yyyy-MM-dd"
   credits: number;
-  isEmailVerified: boolean;
-  isDeleted: boolean;
-  isLocked: boolean;
+  emailVerified: boolean;
+  deleted: boolean;
+  locked: boolean;
   roles: RoleResponse[];
   created_at: string;             // "yyyy-MM-dd'T'HH:mm:ss"
   created_by: string | null;
@@ -76,8 +75,8 @@ export interface UserAdminView {
   fullName: string | null;
   email?: string;
   roles: RoleResponse[];
-  isLocked: boolean;
-  isDeleted: boolean;
+  locked: boolean;
+  deleted: boolean;
   credits: number;
   avatarUrl?: string | null;
 }
@@ -194,7 +193,7 @@ export interface ActivityLogParams {
 // ─── User Management Requests ──────────────────────────────────────────────────
 
 export interface UserStatusUpdateRequest {
-  isLocked: boolean;
+  locked: boolean;
 }
 
 export interface UserRoleUpdateRequest {
@@ -219,15 +218,18 @@ export type ContentType = "POST" | "COMMENT" | "USER";
 
 export interface ReportDetail {
   id: string;
-  contentType: ContentType;
-  violationType: ViolationType;
+  reason: ViolationType;
   status: ReportStatus;
-  reporter: { id: string; username: string };
-  reportedEntity: { id: string; content?: string; userId?: string };
-  createdAt: string;
-  handledAt?: string;
-  handledBy?: { username: string };
   description?: string;
+  reportedBy: string;
+  reporter: UserSimpleResponse;
+  reported_user?: UserSimpleResponse;
+  reportedEntityId: string;
+  reportedEntityType: ContentType;
+  reported_content_text?: string;
+  reported_media_url?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface HandleReportPayload {
@@ -240,7 +242,13 @@ export interface HandleReportPayload {
 
 export interface HandleReportRequest {
   status: ReportStatus;
-  description: string;
+  description?: string;
+  feedback_content?: string;
+  moderation_action?: {
+    user_id: string;
+    actionType: string;
+    note?: string;
+  };
 }
 
 // ─── Moderation ───────────────────────────────────────────────────────────────
@@ -272,24 +280,15 @@ export interface RoleRequest {
   permissions: string[];
 }
 
-export interface RoleWithPermissions extends RoleRequest {
-  id?: string;
+export interface RoleWithPermissions {
+  name: string;
+  description: string;
+  permissions: PermissionResponse[];
 }
 
-// ─── Location ─────────────────────────────────────────────────────────────────
-
-export type AdministrativeType = "COUNTRY" | "PROVINCE";
-
-export interface LocationBusinessMetadata {
+export interface PermissionRequest {
   name: string;
-  location_type: LocationType;
-  is_verified: boolean;
-  operational_status: OperationalStatus;
-  rating?: number;
-  user_ratings_total?: number;
-  hotline?: string;
-  website?: string;
-  opening_hours?: string | Record<string, unknown>;
+  description: string;
 }
 
 // ─── Statistics ───────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useAdminStore } from "@/stores/admin-store";
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const baseURL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
 
 export const axiosInstance = axios.create({
   baseURL,
@@ -13,8 +13,9 @@ export const axiosInstance = axios.create({
 // Request interceptor: Gắn Authorization header tự động
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    const isAuthRequest = config.url?.includes("/auth/login") || config.url?.includes("/auth/register");
     const token = useAdminStore.getState().bearerToken;
-    if (token && !config.headers.Authorization) {
+    if (token && !config.headers.Authorization && !isAuthRequest) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -68,9 +69,7 @@ axiosInstance.interceptors.response.use(
       try {
         // Gọi API refresh (dùng axios gốc để tránh interceptor loop)
         const res = await axios.post(`${baseURL}/api/v1/auth/refresh`, {
-          refreshToken: refreshToken,
-        }, {
-          headers: { Authorization: `Bearer ${bearerToken}` }
+          token: refreshToken,
         });
 
         // Backend response format: { code: 1000, data: { access_token, refresh_token, ... } }

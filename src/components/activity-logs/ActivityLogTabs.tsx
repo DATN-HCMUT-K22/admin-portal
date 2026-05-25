@@ -5,6 +5,7 @@ import {
   ACTIVITY_TAB_LABELS,
   type ActivityTabKey,
 } from "@/types/api";
+import { Tabs } from "antd";
 
 interface Props {
   activeTab: ActivityTabKey;
@@ -38,24 +39,22 @@ export function getTabActions(tab: ActivityTabKey): string | undefined {
 }
 
 export function ActivityLogTabs({ activeTab, onTabChange }: Props) {
+  const items = TABS.map((tab) => ({
+    key: tab,
+    label: (
+      <span>
+        <span style={{ marginRight: 8 }}>{TAB_ICONS[tab]}</span>
+        {ACTIVITY_TAB_LABELS[tab]}
+      </span>
+    ),
+  }));
+
   return (
-    <div className="flex flex-wrap gap-1 border-b border-border pb-0">
-      {TABS.map((tab) => (
-        <button
-          key={tab}
-          id={`activity-tab-${tab}`}
-          onClick={() => onTabChange(tab)}
-          className={[
-            "flex items-center gap-1.5 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all",
-            activeTab === tab
-              ? "border-b-2 border-primary bg-primary/5 text-primary"
-              : "text-muted-foreground hover:bg-accent hover:text-foreground",
-          ].join(" ")}
-        >
-          <span>{TAB_ICONS[tab]}</span>
-          <span>{ACTIVITY_TAB_LABELS[tab]}</span>
-        </button>
-      ))}
-    </div>
+    <Tabs
+      activeKey={activeTab}
+      onChange={(key) => onTabChange(key as ActivityTabKey)}
+      items={items}
+      style={{ marginBottom: 0 }}
+    />
   );
 }

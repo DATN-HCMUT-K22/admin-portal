@@ -1,5 +1,6 @@
 import { apiFetch } from "./client";
-import type { HandleReportRequest, ReportDetail, ContentType, ReportStatus } from "@/types/api";
+import { unwrapData } from "./envelope";
+import type { HandleReportRequest, ReportDetail, ContentType, ReportStatus, Paginated } from "@/types/api";
 
 export interface ReportListParams {
   contentType?: ContentType;
@@ -17,21 +18,24 @@ export async function listReports(
   if (params?.page != null) q.set("page", String(Math.max(0, params.page - 1)));
   if (params?.pageSize != null) q.set("pageSize", String(params.pageSize));
   const qs = q.toString();
-  return apiFetch<ReportDetail[] | { items: ReportDetail[] }>(
+  const raw = await apiFetch<unknown>(
     `/api/v1/reports${qs ? `?${qs}` : ""}`
   );
+  return unwrapData<Paginated<ReportDetail>>(raw);
 }
 
 export async function getReport(reportId: string) {
-  return apiFetch<ReportDetail>(`/api/v1/reports/${reportId}`);
+  const raw = await apiFetch<unknown>(`/api/v1/reports/${reportId}`);
+  return unwrapData<ReportDetail>(raw);
 }
 
 export async function handleReport(
   reportId: string,
   body: HandleReportRequest
 ) {
-  return apiFetch<unknown>(`/api/v1/reports/${reportId}/handle`, {
+  const raw = await apiFetch<unknown>(`/api/v1/reports/${reportId}/handle`, {
     method: "POST",
     body,
   });
+  return unwrapData<unknown>(raw);
 }

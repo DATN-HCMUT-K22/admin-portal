@@ -51,6 +51,12 @@ export function canAccessDashboardPath(
   const names = roleNames(roles);
   const hasSystemAdmin = names.includes(ROLE_SYSTEM_ADMIN);
   const hasBusinessAdmin = names.includes(ROLE_BUSINESS_ADMIN);
+  
+  // Ngoại lệ: BUSINESS_ADMIN được phép vào xem Users
+  if (pathname.startsWith("/dashboard/system/users")) {
+    return hasSystemAdmin || hasBusinessAdmin;
+  }
+
   const zone = dashboardZone(pathname);
   const req = zoneRequires(zone);
 

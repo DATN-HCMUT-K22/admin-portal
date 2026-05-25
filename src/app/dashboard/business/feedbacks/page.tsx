@@ -10,7 +10,7 @@ import type { ColumnsType } from "antd/es/table";
 
 const { Title } = Typography;
 
-export default function FeedbacksPage() {
+export default function BusinessFeedbacksPage() {
   const { data, isLoading, error } = useFeedbacks();
   const list = normalizeItems<FeedbackItem>(data as any);
   const err = error as Error | null;
@@ -48,7 +48,7 @@ export default function FeedbacksPage() {
       title: "Hành động",
       key: "action",
       render: (_, f) => (
-        <Link href={`/dashboard/moderation/feedbacks/${f.id}`}>
+        <Link href={`/dashboard/business/feedbacks/${f.id}`}>
           <Button type="link" size="small">Chi tiết</Button>
         </Link>
       ),

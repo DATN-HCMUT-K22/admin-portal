@@ -20,51 +20,52 @@ import type { ReportDetail, ViolationType, ReportStatus, ContentType } from '@/t
  * Current status: TEMPLATE - awaiting backend integration test results
  */
 export function adaptReportDetail(raw: any): ReportDetail {
-  // Log when adapter is used in development
   if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_API === '1') {
     console.log('[Adapter] reports.adaptReportDetail:', raw);
   }
 
-  // Handle potential field name mismatches
-  // Example: Backend might use "type" instead of "violationType"
-  const violationType = (raw.violationType || raw.type) as ViolationType;
-  const contentType = (raw.contentType || raw.content_type || 'POST') as ContentType;
+  const reason = (raw.reason || raw.violationType || raw.type) as ViolationType;
+  const reportedEntityType = (raw.reportedEntityType || raw.contentType || raw.content_type || 'POST') as ContentType;
   const status = raw.status as ReportStatus;
 
-  // Handle reporter object - might be nested differently
   const reporter = raw.reporter
-    ? { id: raw.reporter.id, username: raw.reporter.username }
-    : { id: raw.reporter_id || raw.reporterId, username: raw.reporter_username || 'Unknown' };
+    ? {
+        id: raw.reporter.id,
+        username: raw.reporter.username,
+        fullName: raw.reporter.fullName || null,
+        avatarUrl: raw.reporter.avatarUrl || null,
+      }
+    : {
+        id: raw.reporter_id || raw.reporterId,
+        username: raw.reporter_username || 'Unknown',
+        fullName: null,
+        avatarUrl: null,
+      };
 
-  // Handle reportedEntity object
-  const reportedEntity = raw.reportedEntity || raw.reported_entity || {
-    id: raw.reported_entity_id || raw.reportedEntityId,
-    content: raw.reported_entity_content || raw.content,
-    userId: raw.reported_user_id || raw.userId,
-  };
+  const reportedEntityId =
+    raw.reportedEntityId ||
+    raw.reported_entity_id ||
+    (raw.reportedEntity && raw.reportedEntity.id) ||
+    '';
 
-  // Handle handledBy - might be string username or object
-  const handledBy = raw.handledBy
-    ? (typeof raw.handledBy === 'string'
-        ? { username: raw.handledBy }
-        : raw.handledBy)
-    : raw.handled_by
-      ? (typeof raw.handled_by === 'string'
-          ? { username: raw.handled_by }
-          : raw.handled_by)
-      : undefined;
+  const reported_content_text =
+    raw.reported_content_text ||
+    raw.reported_entity_content ||
+    (raw.reportedEntity && raw.reportedEntity.content);
 
   return {
     id: raw.id,
-    contentType,
-    violationType,
+    reason,
     status,
-    reporter,
-    reportedEntity,
-    createdAt: raw.createdAt || raw.created_at,
-    handledAt: raw.handledAt || raw.handled_at,
-    handledBy,
     description: raw.description,
+    reportedBy: raw.reportedBy || raw.reported_by || reporter.id,
+    reporter,
+    reportedEntityId,
+    reportedEntityType,
+    reported_content_text,
+    reported_media_url: raw.reported_media_url,
+    created_at: raw.created_at || raw.createdAt,
+    updated_at: raw.updated_at || raw.updatedAt,
   };
 }
 

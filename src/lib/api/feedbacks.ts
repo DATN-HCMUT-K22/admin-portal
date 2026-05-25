@@ -2,7 +2,16 @@ import { apiFetch } from "./client";
 
 export interface FeedbackItem {
   id: string;
-  [key: string]: unknown;
+  title: string;
+  content: string;
+  rating: number;
+  type: string;
+  status: string;
+  userId: string;
+  receiverId?: string;
+  parentFeedbackId?: string;
+  reportContentId?: string;
+  created_at?: string;
 }
 
 export async function listFeedbacks(
@@ -19,4 +28,11 @@ export async function listFeedbacks(
 
 export async function getFeedback(id: string) {
   return apiFetch<FeedbackItem>(`/api/v1/feedbacks/${id}`);
+}
+
+export async function respondToFeedback(id: string, body: { description: string; status?: string }) {
+  return apiFetch(`/api/v1/feedbacks/${id}/respond`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }

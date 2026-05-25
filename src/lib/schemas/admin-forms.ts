@@ -1,11 +1,20 @@
 import { z } from "zod";
 
+// Form khóa / mở khóa tài khoản
 export const userStatusSchema = z.object({
-  isLocked: z.boolean(),
+  locked: z.boolean(),
 });
 
 export const userRolesSchema = z.object({
   roles: z.string().min(1, "Nhập ít nhất một role, cách nhau bởi dấu phẩy"),
+});
+
+export const createUserSchema = z.object({
+  username: z.string().min(4, "Tên đăng nhập tối thiểu 4 ký tự"),
+  email: z.string().email("Email không hợp lệ"),
+  password: z.string().min(8, "Mật khẩu tối thiểu 8 ký tự"),
+  fullName: z.string().optional(),
+  roles: z.array(z.string()).optional(),
 });
 
 export const roleCreateSchema = z.object({
@@ -42,24 +51,8 @@ export const handleReportSchema = z.object({
 export type HandleReportForm = z.infer<typeof handleReportSchema>;
 
 export const moderateUserSchema = z.object({
-  user_id: z.string().uuid("UUID không hợp lệ"),
+  user_id: z.string().min(1, "ID không hợp lệ"),
   actionType: z.enum(["BAN_USER", "WARN_USER", "DELETE_POST"]),
   note: z.string().optional(),
 });
 
-export const locationUpsertSchema = z.object({
-  name: z.string().min(1),
-  location_type: z.string().min(1),
-  is_verified: z.boolean(),
-  operational_status: z.enum([
-    "OPERATIONAL",
-    "CLOSED_PERMANENTLY",
-    "CLOSED_TEMPORARILY",
-  ]),
-  /** Chuỗi từ input; chuyển sang số khi gửi API */
-  rating: z.string().optional(),
-  user_ratings_total: z.string().optional(),
-  hotline: z.string().optional(),
-  website: z.string().optional(),
-  opening_hours: z.string().optional(),
-});

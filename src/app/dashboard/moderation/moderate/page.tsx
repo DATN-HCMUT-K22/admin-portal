@@ -1,89 +1,122 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useModerateUser } from "@/hooks/use-admin-queries";
-import { moderateUserSchema } from "@/lib/schemas/admin-forms";
-import type { z } from "zod";
+import { useState } from "react";
+import Link from "next/link";
+import { useModerationActions } from "@/hooks/use-admin-queries";
+import { Table, Select, Typography, Tag, Space, Input } from "antd";
+import type { ColumnsType } from "antd/es/table";
 
-type Form = z.infer<typeof moderateUserSchema>;
+const { Title, Text } = Typography;
+const { Search } = Input;
 
-export default function ModerateUserPage() {
-  const mut = useModerateUser();
-  const form = useForm<Form>({
-    resolver: zodResolver(moderateUserSchema),
-    defaultValues: {
-      user_id: "",
-      actionType: "WARN_USER",
-      note: "",
-    },
+export default function ModerationHistoryPage() {
+  const [page, setPage] = useState(1);
+  const [actionType, setActionType] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
+
+  const { data, isLoading, error } = useModerationActions({
+    page,
+    pageSize: 20,
+    actionType: actionType || undefined,
+    userId: userId || undefined,
   });
 
+  const list = data?.content || [];
+  const err = error as Error | null;
+
+  const columns: ColumnsType<any> = [
+    {
+      title: "Người dùng bị phạt",
+      key: "user",
+      render: (_, item) => (
+        <Link href={`/dashboard/system/users/${item.moderated_user?.id}`}>
+          <Typography.Link>
+            {item.moderated_user?.username || item.moderated_user?.id || "N/A"}
+          </Typography.Link>
+        </Link>
+      ),
+    },
+    {
+      title: "Hành động",
+      dataIndex: "action_type",
+      key: "action_type",
+      render: (val) => (
+        <Tag color={val === "BAN_USER" ? "error" : "warning"}>
+          {val}
+        </Tag>
+      ),
+    },
+    {
+      title: "Lý do",
+      dataIndex: "note",
+      key: "note",
+      render: (val) => val || "-",
+    },
+    {
+      title: "Người xử lý",
+      key: "admin",
+      render: (_, item) => item.admin?.username || "-",
+    },
+    {
+      title: "Thời gian",
+      dataIndex: "created_at",
+      key: "created_at",
+      render: (val) => new Date(val).toLocaleString("vi-VN"),
+    },
+  ];
+
   return (
-    <div className="mx-auto max-w-md space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Điều phối người dùng</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Cảnh báo hoặc khóa tài khoản người dùng (WARN_USER / BAN_USER).
-        </p>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <Title level={4} style={{ margin: 0 }}>Lịch sử kiểm duyệt</Title>
+          <Text type="secondary">Theo dõi các hành động xử lý vi phạm</Text>
+        </div>
+        <Space size="middle" wrap>
+          <Search
+            placeholder="Tìm theo User ID..."
+            allowClear
+            onSearch={(value) => {
+              setUserId(value);
+              setPage(1);
+            }}
+            style={{ width: 250 }}
+          />
+          <Select
+            value={actionType}
+            onChange={(val) => {
+              setActionType(val);
+              setPage(1);
+            }}
+            style={{ width: 250 }}
+            options={[
+              { value: "", label: "Tất cả hành động" },
+              { value: "WARN_USER", label: "WARN_USER (Cảnh cáo)" },
+              { value: "BAN_USER", label: "BAN_USER (Khóa)" },
+              { value: "DELETE_POST", label: "DELETE_POST (Xóa bài)" },
+            ]}
+          />
+        </Space>
       </div>
-      <form
-        className="space-y-4"
-        onSubmit={form.handleSubmit((v) =>
-          mut.mutateAsync(v).catch(() => undefined)
-        )}
-      >
-        <div>
-          <label className="mb-1 block text-sm font-medium">User ID (UUID)</label>
-          <input
-            {...form.register("user_id")}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 font-mono text-sm"
-          />
-          {form.formState.errors.user_id && (
-            <p className="mt-1 text-sm text-destructive">
-              {form.formState.errors.user_id.message}
-            </p>
-          )}
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium">Hành động</label>
-          <select
-            {...form.register("actionType")}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="WARN_USER">WARN_USER</option>
-            <option value="BAN_USER">BAN_USER</option>
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium">Ghi chú</label>
-          <textarea
-            {...form.register("note")}
-            rows={3}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-          />
-          {form.formState.errors.note && (
-            <p className="mt-1 text-sm text-destructive">
-              {form.formState.errors.note.message}
-            </p>
-          )}
-        </div>
-        <button
-          type="submit"
-          disabled={mut.isPending}
-          className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground"
-        >
-          {mut.isPending ? "Đang gửi…" : "Thực hiện"}
-        </button>
-        {mut.isError && (
-          <p className="text-sm text-destructive">
-            {(mut.error as Error).message}
-          </p>
-        )}
-        {mut.isSuccess && (
-          <p className="text-sm text-primary">Đã gửi yêu cầu.</p>
-        )}
-      </form>
+
+      <Table
+        loading={isLoading}
+        dataSource={list}
+        columns={columns}
+        rowKey="id"
+        pagination={{
+          current: data?.pageable?.pageNumber !== undefined ? data.pageable.pageNumber + 1 : page,
+          pageSize: 20,
+          total: data?.totalElements || 0,
+          onChange: setPage,
+          showSizeChanger: false,
+        }}
+        locale={{
+          emptyText: err?.message?.includes("404") || err?.message?.includes("not found")
+            ? "Tính năng đang được phát triển (API trả về 404)." 
+            : "Không có dữ liệu kiểm duyệt."
+        }}
+      />
     </div>
   );
 }

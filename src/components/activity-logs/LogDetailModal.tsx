@@ -1,4 +1,7 @@
 import type { ActivityLog } from "@/types/api";
+import { Modal, Descriptions, Avatar, Space, Typography, Tag } from "antd";
+
+const { Text } = Typography;
 
 interface Props {
   log: ActivityLog | null;
@@ -20,99 +23,64 @@ export function LogDetailModal({ log, onClose }: Props) {
   const metadata = parseMetadata(log.metadata);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Modal
+      title="Chi tiết Activity Log"
+      open={!!log}
+      onCancel={onClose}
+      footer={null}
+      width={700}
     >
-      <div className="w-full max-w-2xl rounded-xl border border-border bg-background shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <h2 className="text-lg font-semibold">Chi tiết Activity Log</h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="space-y-4 p-6">
-          {/* User */}
-          <div className="flex items-center gap-3 rounded-lg bg-muted/40 p-3">
-            {log.user.avatarUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={log.user.avatarUrl}
-                alt={log.user.username}
-                className="h-10 w-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
-                {log.user.username[0]?.toUpperCase()}
-              </div>
-            )}
-            <div>
-              <p className="font-medium">{log.user.username}</p>
-              {log.user.fullName && (
-                <p className="text-sm text-muted-foreground">{log.user.fullName}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Fields grid */}
-          <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">ID Log</p>
-              <p className="mt-0.5 font-mono text-xs">{log.id}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Hành động</p>
-              <p className="mt-0.5 font-semibold text-sm">{log.action}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Thời gian</p>
-              <p className="mt-0.5 text-sm">
-                {new Date(log.created_at).toLocaleString("vi-VN")}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">IP Address</p>
-              <p className="mt-0.5 font-mono text-sm">{log.ip_address ?? "—"}</p>
-            </div>
-            {log.entity_type && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">Loại đối tượng</p>
-                <p className="mt-0.5 text-sm">{log.entity_type}</p>
-              </div>
-            )}
-            {log.entity_id && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">ID đối tượng</p>
-                <p className="mt-0.5 font-mono text-xs">{log.entity_id}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Metadata */}
-          {metadata && (
-            <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Metadata</p>
-              <pre className="overflow-x-auto rounded-lg bg-muted/50 p-4 text-xs leading-relaxed">
-                {JSON.stringify(metadata, null, 2)}
-              </pre>
-            </div>
+      <Space direction="vertical" size="large" style={{ width: "100%", marginTop: 16 }}>
+        <Space align="center" size="middle" style={{ padding: "12px 16px", background: "#f5f5f5", borderRadius: 8, width: "100%" }}>
+          {log.user.avatarUrl ? (
+            <Avatar src={log.user.avatarUrl} size="large" />
+          ) : (
+            <Avatar size="large" style={{ backgroundColor: "#1890ff" }}>
+              {log.user.username[0]?.toUpperCase()}
+            </Avatar>
           )}
-        </div>
+          <div>
+            <Text strong style={{ display: "block" }}>{log.user.username}</Text>
+            {log.user.fullName && <Text type="secondary">{log.user.fullName}</Text>}
+          </div>
+        </Space>
 
-        <div className="flex justify-end border-t border-border px-6 py-4">
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-accent"
-          >
-            Đóng
-          </button>
-        </div>
-      </div>
-    </div>
+        <Descriptions bordered column={2} size="small">
+          <Descriptions.Item label="ID Log" span={2}>
+            <Text code>{log.id}</Text>
+          </Descriptions.Item>
+          <Descriptions.Item label="Hành động">
+            <Tag color="blue">{log.action}</Tag>
+          </Descriptions.Item>
+          <Descriptions.Item label="Thời gian">
+            {new Date(log.created_at).toLocaleString("vi-VN")}
+          </Descriptions.Item>
+          <Descriptions.Item label="IP Address" span={2}>
+            <Text code>{log.ip_address ?? "—"}</Text>
+          </Descriptions.Item>
+          {log.entity_type && (
+            <Descriptions.Item label="Loại đối tượng">
+              {log.entity_type}
+            </Descriptions.Item>
+          )}
+          {log.entity_id && (
+            <Descriptions.Item label="ID đối tượng">
+              <Text code>{log.entity_id}</Text>
+            </Descriptions.Item>
+          )}
+        </Descriptions>
+
+        {metadata && (
+          <div>
+            <Text strong type="secondary" style={{ display: "block", marginBottom: 8 }}>
+              Metadata
+            </Text>
+            <pre style={{ margin: 0, padding: 16, background: "#f5f5f5", borderRadius: 8, overflowX: "auto", fontSize: 12 }}>
+              {JSON.stringify(metadata, null, 2)}
+            </pre>
+          </div>
+        )}
+      </Space>
+    </Modal>
   );
 }

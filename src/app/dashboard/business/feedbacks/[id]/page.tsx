@@ -7,7 +7,7 @@ import { Card, Descriptions, Tag, Form, Input, Select, Button, Typography, Alert
 
 const { Title, Text } = Typography;
 
-export default function FeedbackDetailPage() {
+export default function BusinessFeedbackDetailPage() {
   const params = useParams();
   const id = String(params.id ?? "");
 
