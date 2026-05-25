@@ -23,7 +23,7 @@ export function hasRole(roles: RoleRef[] | undefined, name: string) {
 /** Sau đăng nhập / bootstrap: SYSTEM_ADMIN → hub, BUSINESS_ADMIN → business */
 export function getPostLoginRedirectPath(roles: RoleRef[]): string {
   const names = roleNames(roles);
-  if (names.includes(ROLE_SYSTEM_ADMIN)) return "/dashboard";
+  if (names.includes(ROLE_SYSTEM_ADMIN)) return "/dashboard/system/users";
   if (names.includes(ROLE_BUSINESS_ADMIN)) return "/dashboard/business/reports";
   return "/home";
 }
