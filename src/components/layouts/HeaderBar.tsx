@@ -63,25 +63,8 @@ export function HeaderBar({ collapsed, onToggle }: HeaderBarProps) {
   }
 
   const userMenuItems: MenuProps['items'] = [
-    {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: 'Profile',
-      onClick: () => {
-        router.push('/dashboard/profile')
-      },
-    },
-    {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: 'Settings',
-      onClick: () => {
-        router.push('/dashboard/settings')
-      },
-    },
-    {
-      type: 'divider',
-    },
+
+
     {
       key: 'logout',
       icon: <LogoutOutlined />,
