@@ -7,7 +7,7 @@ export const queryKeys = {
     reports: (params?: { status?: string; contentType?: string }) =>
       ["admin", "reports", params] as const,
     report: (id: string) => ["admin", "report", id] as const,
-    feedbacks: () => ["admin", "feedbacks"] as const,
+    feedbacks: (params?: { page?: number; size?: number; sort?: string }) => ["admin", "feedbacks", params] as const,
     feedback: (id: string) => ["admin", "feedback", id] as const,
     administrative: (type?: string, country?: string) =>
       ["admin", "administrative", type, country] as const,

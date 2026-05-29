@@ -244,11 +244,11 @@ export function useUserModerationHistory(userId: string) {
 
 // ─── Feedbacks ────────────────────────────────────────────────────────────────
 
-export function useFeedbacks() {
+export function useFeedbacks(params?: { page?: number; size?: number; sort?: string }) {
   const token = useAdminStore((s) => s.bearerToken);
   return useQuery({
-    queryKey: queryKeys.admin.feedbacks(),
-    queryFn: () => feedbacksApi.listFeedbacks(),
+    queryKey: queryKeys.admin.feedbacks(params),
+    queryFn: () => feedbacksApi.listFeedbacks(params),
     enabled: !!token?.trim(),
   });
 }
@@ -269,7 +269,7 @@ export function useRespondToFeedback(id: string) {
       feedbacksApi.respondToFeedback(id, body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.admin.feedback(id) });
-      void qc.invalidateQueries({ queryKey: queryKeys.admin.feedbacks() });
+      void qc.invalidateQueries({ queryKey: ["admin", "feedbacks"] });
     },
   });
 }
