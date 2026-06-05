@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Form khóa / mở khóa tài khoản
 export const userStatusSchema = z.object({
-  locked: z.boolean(),
+  isLocked: z.boolean(),
 });
 
 export const userRolesSchema = z.object({

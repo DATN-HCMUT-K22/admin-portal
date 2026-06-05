@@ -8,17 +8,17 @@ interface Props {
 }
 
 const contentTypes: { value: ContentType; label: string }[] = [
-  { value: "POST", label: "Bài viết" },
-  { value: "COMMENT", label: "Bình luận" },
-  { value: "USER", label: "Người dùng" },
+  { value: "POST", label: "Post" },
+  { value: "COMMENT", label: "Comment" },
+  { value: "USER", label: "User" },
 ];
 
 const statuses: { value: ReportStatus; label: string }[] = [
-  { value: "PENDING", label: "Đang chờ" },
-  { value: "UNDER_REVIEW", label: "Đang xem xét" },
-  { value: "PROCESSED", label: "Đã xử lý" },
-  { value: "DISMISSED", label: "Đã bỏ qua" },
-  { value: "ESCALATED", label: "Đã leo thang" },
+  { value: "PENDING", label: "Pending" },
+  { value: "UNDER_REVIEW", label: "Under Review" },
+  { value: "PROCESSED", label: "Processed" },
+  { value: "DISMISSED", label: "Dismissed" },
+  { value: "ESCALATED", label: "Escalated" },
 ];
 
 export function ReportFilterBar({ onFilterChange }: Props) {
@@ -47,7 +47,7 @@ export function ReportFilterBar({ onFilterChange }: Props) {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Tất cả
+          All
         </button>
         {contentTypes.map((type) => (
           <button
@@ -72,7 +72,7 @@ export function ReportFilterBar({ onFilterChange }: Props) {
           onChange={(e) => handleStatusChange((e.target.value as ReportStatus) || undefined)}
           className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
         >
-          <option value="">Tất cả</option>
+          <option value="">All</option>
           {statuses.map((status) => (
             <option key={status.value} value={status.value}>
               {status.label}

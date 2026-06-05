@@ -67,10 +67,10 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
   const handleFinish = async (values: any) => {
     try {
       await respondMut.mutateAsync(values);
-      message.success("Đã gửi phản hồi và cập nhật trạng thái thành công!");
+      message.success("Response sent and status updated successfully!");
       form.resetFields(["description"]);
     } catch (e: any) {
-      message.error(e.message || "Gửi phản hồi thất bại");
+      message.error(e.message || "Failed to send response");
     }
   };
 
@@ -78,29 +78,29 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
   const typeTag = (type: string) => {
     switch (type) {
       case "BUG_REPORT":
-        return <Tag color="error" className="rounded-full px-3 py-0.5 border-none font-medium"><BugOutlined /> Báo lỗi</Tag>;
+        return <Tag color="error" className="rounded-full px-3 py-0.5 border-none font-medium"><BugOutlined /> Bug</Tag>;
       case "SUGGESTION":
-        return <Tag color="warning" className="rounded-full px-3 py-0.5 border-none font-medium"><BulbOutlined /> Góp ý</Tag>;
+        return <Tag color="warning" className="rounded-full px-3 py-0.5 border-none font-medium"><BulbOutlined /> Suggestion</Tag>;
       case "REPORT_FEEDBACK":
-        return <Tag color="cyan" className="rounded-full px-3 py-0.5 border-none font-medium"><SafetyOutlined /> Báo cáo</Tag>;
+        return <Tag color="cyan" className="rounded-full px-3 py-0.5 border-none font-medium"><SafetyOutlined /> Report</Tag>;
       default:
-        return <Tag color="default" className="rounded-full px-3 py-0.5 border-none font-medium">Khác</Tag>;
+        return <Tag color="default" className="rounded-full px-3 py-0.5 border-none font-medium">Other</Tag>;
     }
   };
 
   // Determine metadata color/label for statuses
   const statusTag = (status: string) => {
     let color = "processing";
-    let label = "Đang chờ";
+    let label = "Pending";
     if (status === "RESOLVED") {
       color = "success";
-      label = "Đã giải quyết";
+      label = "Resolved";
     } else if (status === "REPLIED") {
       color = "cyan";
-      label = "Đã trả lời";
+      label = "Replied";
     } else if (status === "SENT") {
       color = "warning";
-      label = "Đã gửi";
+      label = "Sent";
     }
     return <Tag color={color} className="rounded-full px-3 py-0.5 border-none font-medium">{label}</Tag>;
   };
@@ -116,10 +116,10 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
         />
         <div>
           <Title level={4} style={{ margin: 0, fontWeight: 700 }} className="text-slate-800">
-            Chi tiết phản hồi
+            Feedback Details
           </Title>
           <Text className="text-slate-500 text-xs">
-            Quản lý và giải quyết ý kiến đóng góp của người dùng.
+            Manage and resolve user feedback.
           </Text>
         </div>
       </div>
@@ -142,7 +142,7 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <Title level={4} className="m-0 font-bold text-slate-800" style={{ margin: 0 }}>
-                        {data.sender?.fullName || "Người dùng ẩn danh"}
+                        {data.sender?.fullName || "Anonymous User"}
                       </Title>
                       {data.sender?.username && (
                         <Text type="secondary" className="text-sm">
@@ -154,7 +154,7 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
                       {typeTag(data.type)}
                       {statusTag(data.status)}
                       <Text type="secondary" style={{ fontSize: 12 }}>
-                        Gửi lúc: {new Date(data.created_at).toLocaleString("vi-VN")}
+                        Sent at: {new Date(data.created_at).toLocaleString("vi-VN")}
                       </Text>
                     </div>
                   </div>
@@ -163,14 +163,14 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
             </Card>
 
             {/* Content Details */}
-            <Card title="Nội dung chi tiết" bordered={false} className="shadow-sm rounded-2xl border border-slate-100">
+            <Card title="Detailed Content" bordered={false} className="shadow-sm rounded-2xl border border-slate-100">
               <Descriptions column={1} bordered={false} layout="vertical" className="feedback-descriptions">
-                <Descriptions.Item label={<span className="font-semibold text-slate-400 uppercase tracking-wider text-xs">Tiêu đề</span>}>
-                  <Text className="text-slate-800 font-semibold text-lg">{data.title || "Không có tiêu đề"}</Text>
+                <Descriptions.Item label={<span className="font-semibold text-slate-400 uppercase tracking-wider text-xs">Title</span>}>
+                  <Text className="text-slate-800 font-semibold text-lg">{data.title || "No Title"}</Text>
                 </Descriptions.Item>
-                <Descriptions.Item label={<span className="font-semibold text-slate-400 uppercase tracking-wider text-xs">Nội dung phản hồi</span>}>
+                <Descriptions.Item label={<span className="font-semibold text-slate-400 uppercase tracking-wider text-xs">Feedback Content</span>}>
                   <Paragraph className="text-slate-700 whitespace-pre-line leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm">
-                    {data.content || "Không có nội dung chi tiết."}
+                    {data.content || "No detailed content."}
                   </Paragraph>
                 </Descriptions.Item>
               </Descriptions>
@@ -182,7 +182,7 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
                 title={
                   <div className="flex items-center gap-2 text-rose-600">
                     <SafetyOutlined />
-                    <span>Báo cáo vi phạm liên quan</span>
+                    <span>Related Violation Report</span>
                   </div>
                 }
                 bordered={false}
@@ -190,41 +190,41 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
               >
                 <div className="space-y-4">
                   <Descriptions bordered size="small" column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} className="bg-white rounded-xl overflow-hidden border border-rose-100">
-                    <Descriptions.Item label="ID Báo cáo">
+                    <Descriptions.Item label="Report ID">
                       <Text code>{data.report.id}</Text>
                     </Descriptions.Item>
-                    <Descriptions.Item label="Trạng thái">
+                    <Descriptions.Item label="Status">
                       <Tag color={data.report.status === "PROCESSED" ? "success" : "warning"}>
                         {data.report.status}
                       </Tag>
                     </Descriptions.Item>
-                    <Descriptions.Item label="Loại vi phạm">
+                    <Descriptions.Item label="Violation Type">
                       <Text className="font-semibold">{data.report.report_type || "N/A"}</Text>
                     </Descriptions.Item>
-                    <Descriptions.Item label="Loại nội dung">
+                    <Descriptions.Item label="Content Type">
                       <Tag>{data.report.content_type || "N/A"}</Tag>
                     </Descriptions.Item>
-                    <Descriptions.Item label="Người báo cáo">
+                    <Descriptions.Item label="Reporter">
                       {data.report.reporter ? (
                         <Text strong>{data.report.reporter.fullName} (@{data.report.reporter.username})</Text>
                       ) : (
-                        <Text type="secondary">Ẩn danh</Text>
+                        <Text type="secondary">Anonymous</Text>
                       )}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Đối tượng bị báo cáo">
+                    <Descriptions.Item label="Reported Entity">
                       {data.report.reported_user ? (
                         <Text strong className="text-rose-600">{data.report.reported_user.fullName} (@{data.report.reported_user.username})</Text>
                       ) : (
-                        <Text type="secondary">Không có</Text>
+                        <Text type="secondary">None</Text>
                       )}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Nội dung vi phạm" span={2}>
+                    <Descriptions.Item label="Violation Content" span={2}>
                       <Paragraph className="text-slate-600 m-0 py-1" style={{ margin: 0 }}>
-                        {data.report.reported_content_text || "Không có nội dung văn bản"}
+                        {data.report.reported_content_text || "No text content"}
                       </Paragraph>
                       {data.report.reported_media_url && (
                         <div className="mt-2">
-                          <Text type="secondary" className="block text-xs mb-1">Phương tiện đính kèm:</Text>
+                          <Text type="secondary" className="block text-xs mb-1">Attached media:</Text>
                           <a href={data.report.reported_media_url} target="_blank" rel="noopener noreferrer">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
@@ -242,7 +242,7 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
                     {/* Link to reports handler: determine prefix dashboard/moderation or dashboard/business */}
                     <Link href={`${pathPrefix.includes("moderation") ? "/dashboard/moderation" : "/dashboard/business"}/reports/${data.report.id}`}>
                       <Button type="primary" danger icon={<FileTextOutlined />}>
-                        Đi tới trang xử lý báo cáo vi phạm
+                        Go to report handling page
                       </Button>
                     </Link>
                   </div>
@@ -251,11 +251,11 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
             )}
 
             {/* Conversation History (Thread) */}
-            <Card title="Lịch sử trao đổi & Phản hồi" bordered={false} className="shadow-sm rounded-2xl border border-slate-100">
+            <Card title="Conversation History & Responses" bordered={false} className="shadow-sm rounded-2xl border border-slate-100">
               {replies.length === 0 ? (
                 <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                   <CommentOutlined className="text-slate-300 text-3xl mb-2" />
-                  <p className="text-slate-400 text-sm m-0">Chưa có phản hồi nào được gửi cho người dùng từ Admin.</p>
+                  <p className="text-slate-400 text-sm m-0">No responses sent to user by Admin yet.</p>
                 </div>
               ) : (
                 <Timeline mode="left" className="pt-4 feedback-timeline">
@@ -269,7 +269,7 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
                         label={
                           <div className="flex flex-col text-right pr-2">
                             <span className="font-semibold text-slate-700 text-xs">
-                              {reply.sender?.fullName || reply.sender?.username || "Quản trị viên"}
+                              {reply.sender?.fullName || reply.sender?.username || "Administrator"}
                             </span>
                             <span className="text-slate-400 text-[10px]">
                               {date.toLocaleDateString("vi-VN")} {date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
@@ -280,7 +280,7 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm relative ml-2 max-w-2xl">
                           <div className="absolute top-3 right-3">
                             <Tag color="cyan" className="rounded-full px-2 py-0.2 border-none text-[10px] uppercase font-bold">
-                              Trạng thái: {reply.status}
+                              Status: {reply.status}
                             </Tag>
                           </div>
                           <Paragraph className="text-slate-700 m-0 leading-relaxed pr-20" style={{ margin: 0 }}>
@@ -295,7 +295,7 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
             </Card>
 
             {/* Submit Response Form */}
-            <Card title="Phản hồi tới người dùng" bordered={false} className="shadow-sm rounded-2xl border border-slate-100">
+            <Card title="Respond to User" bordered={false} className="shadow-sm rounded-2xl border border-slate-100">
               <Form
                 form={form}
                 layout="vertical"
@@ -303,28 +303,28 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
                 initialValues={{ status: "REPLIED", description: "" }}
               >
                 <Form.Item
-                  label={<span className="font-semibold text-slate-700 text-sm">Trạng thái mới</span>}
+                  label={<span className="font-semibold text-slate-700 text-sm">New Status</span>}
                   name="status"
                   rules={[{ required: true }]}
                 >
                   <Select
                     className="h-[40px]"
                     options={[
-                      { value: "REPLIED", label: "REPLIED (Đã gửi câu trả lời)" },
-                      { value: "RESOLVED", label: "RESOLVED (Đã giải quyết hoàn toàn)" },
-                      { value: "OPEN", label: "OPEN (Giữ ở trạng thái Đang chờ)" },
+                      { value: "REPLIED", label: "REPLIED" },
+                      { value: "RESOLVED", label: "RESOLVED" },
+                      { value: "OPEN", label: "OPEN (Keep as Pending)" },
                     ]}
                   />
                 </Form.Item>
 
                 <Form.Item
-                  label={<span className="font-semibold text-slate-700 text-sm">Nội dung phản hồi</span>}
+                  label={<span className="font-semibold text-slate-700 text-sm">Response Content</span>}
                   name="description"
-                  rules={[{ required: true, message: "Vui lòng nhập nội dung trả lời gửi cho người dùng" }]}
+                  rules={[{ required: true, message: "Please enter the response to send to the user" }]}
                 >
                   <Input.TextArea
                     rows={5}
-                    placeholder="Nhập nội dung phản hồi tới người dùng... Phản hồi này sẽ được hiển thị trực tiếp trên thiết bị của người dùng."
+                    placeholder="Enter response to user... This response will be shown directly on the user's device."
                     className="rounded-xl border-slate-200 focus:border-primary hover:border-primary p-3"
                   />
                 </Form.Item>
@@ -342,7 +342,7 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
                     }}
                     className="rounded-lg h-[40px] px-5"
                   >
-                    Hủy bỏ
+                    Cancel
                   </Button>
                   <Button
                     type="primary"
@@ -350,7 +350,7 @@ export function FeedbackDetail({ pathPrefix }: FeedbackDetailProps) {
                     loading={respondMut.isPending}
                     className="rounded-lg h-[40px] px-6"
                   >
-                    Gửi phản hồi
+                    Send Response
                   </Button>
                 </div>
               </Form>

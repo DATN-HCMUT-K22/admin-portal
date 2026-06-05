@@ -11,5 +11,7 @@ export const queryKeys = {
     feedback: (id: string) => ["admin", "feedback", id] as const,
     administrative: (type?: string, country?: string) =>
       ["admin", "administrative", type, country] as const,
+    dashboardOverview: () => ["admin", "dashboard", "overview"] as const,
+    configs: () => ["admin", "configs"] as const,
   },
 } as const;

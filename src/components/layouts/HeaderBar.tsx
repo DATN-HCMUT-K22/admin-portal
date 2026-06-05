@@ -23,7 +23,7 @@ export function HeaderBar({ collapsed, onToggle }: HeaderBarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { modal, message } = App.useApp()
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
 
   // Generate breadcrumb items from pathname
   const getBreadcrumbItems = () => {
@@ -114,8 +114,14 @@ export function HeaderBar({ collapsed, onToggle }: HeaderBarProps) {
       {/* Right: User dropdown */}
       <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>
         <Space style={{ cursor: 'pointer' }}>
-          <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#2563eb' }} />
-          <span style={{ fontWeight: 500 }}>Admin User</span>
+          <Avatar icon={<UserOutlined />} style={{ backgroundColor: user?.roles?.some(r => r.name === 'SYSTEM_ADMIN') ? '#2563eb' : user?.roles?.some(r => r.name === 'BUSINESS_ADMIN') ? '#7c3aed' : '#059669' }} />
+          <span style={{ fontWeight: 500 }}>
+            {user?.roles?.some(r => r.name === 'SYSTEM_ADMIN') 
+              ? 'Admin User' 
+              : user?.roles?.some(r => r.name === 'BUSINESS_ADMIN')
+                ? 'Business Admin'
+                : user?.fullName || user?.username || 'User'}
+          </span>
         </Space>
       </Dropdown>
     </Header>

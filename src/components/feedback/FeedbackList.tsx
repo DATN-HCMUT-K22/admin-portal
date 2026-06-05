@@ -138,11 +138,11 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
 
   const columns: ColumnsType<FeedbackResponse> = [
     {
-      title: "Người gửi",
+      title: "Sender",
       key: "sender",
       width: 200,
       render: (_, f) => {
-        const name = f.sender?.fullName || f.sender?.username || "Người dùng ẩn danh";
+        const name = f.sender?.fullName || f.sender?.username || "Anonymous User";
         const username = f.sender?.username ? `@${f.sender.username}` : `ID: ${f.userId?.substring(0, 8)}...`;
         return (
           <div className="flex items-center gap-3">
@@ -166,7 +166,7 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
       },
     },
     {
-      title: "Nội dung phản hồi",
+      title: "Feedback Content",
       key: "content",
       render: (_, f) => {
         const threadReplies = repliesMap[f.id] || [];
@@ -174,11 +174,11 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
           <div className="space-y-1 py-1 max-w-xl">
             <div className="flex items-center gap-2 flex-wrap">
               <Text strong className="text-slate-800 text-sm">
-                {f.title || "Không có tiêu đề"}
+                {f.title || "No Title"}
               </Text>
               {f.report && (
                 <Tag color="red" bordered={false} className="flex items-center gap-1 py-0.5 px-2 rounded-full text-xs">
-                  <SafetyOutlined /> Báo cáo vi phạm
+                  <SafetyOutlined /> Violation Report
                 </Tag>
               )}
             </div>
@@ -193,7 +193,7 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
             {threadReplies.length > 0 && (
               <div className="flex items-center gap-1 mt-1 text-sky-600" style={{ fontSize: 11 }}>
                 <CommentOutlined />
-                <span>Đã có {threadReplies.length} phản hồi từ Admin</span>
+                <span>{threadReplies.length} admin response(s)</span>
               </div>
             )}
           </div>
@@ -201,7 +201,7 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
       },
     },
     {
-      title: "Phân loại",
+      title: "Category",
       dataIndex: "type",
       key: "type",
       width: 140,
@@ -210,37 +210,37 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
           case "BUG_REPORT":
             return (
               <Tag color="error" className="rounded-full px-3 py-0.5 border-none font-medium flex items-center w-fit gap-1">
-                <BugOutlined /> Báo lỗi
+                <BugOutlined /> Bug
               </Tag>
             );
           case "SUGGESTION":
             return (
               <Tag color="warning" className="rounded-full px-3 py-0.5 border-none font-medium flex items-center w-fit gap-1">
-                <BulbOutlined /> Góp ý
+                <BulbOutlined /> Suggestion
               </Tag>
             );
           case "REPORT_FEEDBACK":
             return (
               <Tag color="cyan" className="rounded-full px-3 py-0.5 border-none font-medium flex items-center w-fit gap-1">
-                <SafetyOutlined /> Báo cáo
+                <SafetyOutlined /> Report
               </Tag>
             );
           default:
             return (
               <Tag color="default" className="rounded-full px-3 py-0.5 border-none font-medium flex items-center w-fit gap-1">
-                Khác
+                Other
               </Tag>
             );
         }
       },
     },
     {
-      title: "Đánh giá",
+      title: "Rating",
       dataIndex: "rating",
       key: "rating",
       width: 130,
       render: (rating) => (
-        <Tooltip title={`Đánh giá: ${rating || 0} sao`}>
+        <Tooltip title={`Rating: ${rating || 0} stars`}>
           <div>
             <Rate disabled value={rating || 0} style={{ fontSize: 12, color: "#faad14" }} />
           </div>
@@ -248,26 +248,26 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
       ),
     },
     {
-      title: "Trạng thái",
+      title: "Status",
       dataIndex: "status",
       key: "status",
       width: 120,
       render: (status) => {
         let color = "processing";
-        let label = "Đang chờ";
+        let label = "Pending";
         let icon = <ClockCircleOutlined />;
 
         if (status === "RESOLVED") {
           color = "success";
-          label = "Đã xử lý";
+          label = "Resolved";
           icon = <CheckCircleOutlined />;
         } else if (status === "REPLIED") {
           color = "cyan";
-          label = "Đã trả lời";
+          label = "Replied";
           icon = <CommentOutlined />;
         } else if (status === "SENT") {
           color = "warning";
-          label = "Đã gửi";
+          label = "Sent";
           icon = <ArrowRightOutlined />;
         }
 
@@ -280,7 +280,7 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
       },
     },
     {
-      title: "Thời gian",
+      title: "Time",
       dataIndex: "created_at",
       key: "created_at",
       width: 155,
@@ -317,10 +317,10 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
       {/* Page Header */}
       <div>
         <Title level={3} style={{ margin: 0, fontWeight: 700 }} className="text-slate-900">
-          Phản hồi & Báo lỗi
+          Feedbacks & Bug Reports
         </Title>
         <Text className="text-slate-500 text-sm">
-          Xem và quản lý các đóng góp ý kiến, báo lỗi hệ thống từ người dùng.
+          View and manage user feedback and system bug reports.
         </Text>
       </div>
 
@@ -333,7 +333,7 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
                 <InboxOutlined />
               </div>
               <div>
-                <Text type="secondary" className="text-xs uppercase tracking-wider font-semibold text-slate-400 block">Tất cả phản hồi</Text>
+                <Text type="secondary" className="text-xs uppercase tracking-wider font-semibold text-slate-400 block">Total Feedbacks</Text>
                 <Title level={3} className="m-0 font-bold text-slate-800" style={{ margin: 0 }}>
                   {metrics.total}
                 </Title>
@@ -349,7 +349,7 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
                 <ClockCircleOutlined />
               </div>
               <div>
-                <Text type="secondary" className="text-xs uppercase tracking-wider font-semibold text-slate-400 block">Đang chờ xử lý</Text>
+                <Text type="secondary" className="text-xs uppercase tracking-wider font-semibold text-slate-400 block">Pending Feedbacks</Text>
                 <Title level={3} className="m-0 font-bold text-slate-800" style={{ margin: 0 }}>
                   {metrics.open}
                 </Title>
@@ -369,25 +369,25 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
               buttonStyle="solid"
-              className="flex flex-wrap gap-1 border-none"
+              className="flex flex-wrap gap-4 border-none"
             >
-              <Radio.Button value="ALL" className="rounded-lg border-none hover:text-primary">
-                Tất cả ({metrics.total})
+              <Radio.Button value="ALL" className="!rounded-lg !border-none before:!hidden hover:text-primary shadow-none">
+                All ({metrics.total})
               </Radio.Button>
-              <Radio.Button value="OPEN" className="rounded-lg border-none hover:text-amber-600">
-                Đang chờ ({metrics.open})
+              <Radio.Button value="OPEN" className="!rounded-lg !border-none before:!hidden hover:text-amber-600 shadow-none">
+                Pending ({metrics.open})
               </Radio.Button>
-              <Radio.Button value="REPLIED" className="rounded-lg border-none hover:text-indigo-600">
-                Đã trả lời
+              <Radio.Button value="REPLIED" className="!rounded-lg !border-none before:!hidden hover:text-indigo-600 shadow-none">
+                Replied
               </Radio.Button>
-              <Radio.Button value="RESOLVED" className="rounded-lg border-none hover:text-emerald-600">
-                Đã giải quyết
+              <Radio.Button value="RESOLVED" className="!rounded-lg !border-none before:!hidden hover:text-emerald-600 shadow-none">
+                Resolved
               </Radio.Button>
             </Radio.Group>
 
             {/* Quick Refresh */}
             <Button onClick={() => refetch()} loading={isLoading}>
-              Tải lại danh sách
+              Refresh List
             </Button>
           </div>
 
@@ -395,7 +395,7 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
             {/* Search Input */}
             <div className="md:col-span-2">
               <Input
-                placeholder="Tìm theo tiêu đề, nội dung, người gửi..."
+                placeholder="Search by title, content, sender..."
                 prefix={<SearchOutlined className="text-slate-400" />}
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
@@ -407,16 +407,16 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
             {/* Type dropdown */}
             <div>
               <Select
-                placeholder="Lọc loại phản hồi"
+                placeholder="Filter by type"
                 className="w-full h-[40px] rounded-lg"
                 value={selectedType}
                 onChange={(val) => setSelectedType(val)}
                 options={[
-                  { value: "ALL", label: "Tất cả các loại" },
-                  { value: "BUG_REPORT", label: "Báo lỗi hệ thống" },
-                  { value: "SUGGESTION", label: "Góp ý cải tiến" },
-                  { value: "REPORT_FEEDBACK", label: "Báo cáo nội dung" },
-                  { value: "OTHER", label: "Khác" },
+                  { value: "ALL", label: "All types" },
+                  { value: "BUG_REPORT", label: "Bug Report" },
+                  { value: "SUGGESTION", label: "Suggestion" },
+                  { value: "REPORT_FEEDBACK", label: "Content Report" },
+                  { value: "OTHER", label: "Other" },
                 ]}
               />
             </div>
@@ -424,15 +424,15 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
             {/* Sort order dropdown */}
             <div>
               <Select
-                placeholder="Sắp xếp"
+                placeholder="Sort by"
                 className="w-full h-[40px] rounded-lg"
                 value={sortOrder}
                 onChange={(val) => setSortOrder(val)}
                 options={[
-                  { value: "date_desc", label: "Mới nhất trước" },
-                  { value: "date_asc", label: "Cũ nhất trước" },
-                  { value: "rating_desc", label: "Đánh giá cao nhất" },
-                  { value: "rating_asc", label: "Đánh giá thấp nhất" },
+                  { value: "date_desc", label: "Newest First" },
+                  { value: "date_asc", label: "Oldest First" },
+                  { value: "rating_desc", label: "Highest Rating" },
+                  { value: "rating_asc", label: "Lowest Rating" },
                 ]}
               />
             </div>
@@ -440,7 +440,7 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
         </div>
 
         {/* Table representation */}
-        <QueryState isLoading={isLoading} error={err} isEmpty={filteredList.length === 0} emptyMessage="Không tìm thấy phản hồi nào trùng khớp với bộ lọc.">
+        <QueryState isLoading={isLoading} error={err} isEmpty={filteredList.length === 0} emptyMessage="No feedbacks found matching the filters.">
           <div className="overflow-x-auto">
             <Table<FeedbackResponse>
               dataSource={filteredList}
@@ -450,7 +450,7 @@ export function FeedbackList({ pathPrefix }: FeedbackListProps) {
                 pageSize: 15,
                 showSizeChanger: true,
                 pageSizeOptions: ["15", "30", "50"],
-                showTotal: (total) => `Tổng cộng ${total} phản hồi`,
+                showTotal: (total) => `Total ${total} feedbacks`,
                 className: "px-6 py-4 border-t border-slate-100 m-0",
               }}
               className="feedback-table border-none"
