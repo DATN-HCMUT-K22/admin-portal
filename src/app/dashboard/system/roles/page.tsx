@@ -16,6 +16,11 @@ import type { ColumnsType } from "antd/es/table";
 
 const { Title, Paragraph } = Typography;
 
+const formatEnum = (text: string) => {
+  if (!text) return "";
+  return text.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
 export default function RolesPage() {
   const { isAdmin } = usePermissionCheck();
   
@@ -38,8 +43,8 @@ export default function RolesPage() {
       <div className="flex min-h-[400px] items-center justify-center">
         <Result
           status="403"
-          title="Không có quyền truy cập"
-          subTitle="Chỉ ADMIN mới có thể quản lý vai trò và quyền hạn."
+          title="Access Denied"
+          subTitle="Only ADMINs can manage roles and permissions."
         />
       </div>
     );
@@ -58,18 +63,18 @@ export default function RolesPage() {
         permissions: values.permissions || [],
       });
       roleForm.resetFields();
-      message.success("Tạo vai trò thành công");
+      message.success("Role created successfully");
     } catch (e: any) {
-      message.error(e.message || "Lỗi khi tạo vai trò");
+      message.error(e.message || "Failed to create role");
     }
   };
 
   const handleDeleteRole = async (name: string) => {
     try {
       await deleteRoleMut.mutateAsync(name);
-      message.success("Đã xóa vai trò");
+      message.success("Role deleted");
     } catch (e: any) {
-      message.error(e.message || "Lỗi khi xóa vai trò");
+      message.error(e.message || "Failed to delete role");
     }
   };
 
@@ -80,18 +85,18 @@ export default function RolesPage() {
         description: values.description || "",
       });
       permForm.resetFields();
-      message.success("Tạo quyền hạn thành công");
+      message.success("Permission created successfully");
     } catch (e: any) {
-      message.error(e.message || "Lỗi khi tạo quyền hạn");
+      message.error(e.message || "Failed to create permission");
     }
   };
 
   const handleDeletePerm = async (name: string) => {
     try {
       await deletePermMut.mutateAsync(name);
-      message.success("Đã xóa quyền hạn");
+      message.success("Permission deleted");
     } catch (e: any) {
-      message.error(e.message || "Lỗi khi xóa quyền hạn");
+      message.error(e.message || "Failed to delete permission");
     }
   };
 
@@ -99,43 +104,43 @@ export default function RolesPage() {
 
   const roleColumns: ColumnsType<RoleWithPermissions> = [
     {
-      title: "Vai trò",
+      title: "Role",
       dataIndex: "name",
       key: "name",
-      render: (text) => <strong>{text}</strong>,
+      render: (text) => <strong>{formatEnum(text)}</strong>,
     },
     {
-      title: "Mô tả",
+      title: "Description",
       dataIndex: "description",
       key: "description",
     },
     {
-      title: "Quyền hạn",
+      title: "Permissions",
       dataIndex: "permissions",
       key: "permissions",
       render: (perms: PermissionResponse[]) => (
         <Space wrap>
           {perms?.map((p) => (
             <Tag color="blue" key={p.name}>
-              {p.name}
+              {formatEnum(p.name)}
             </Tag>
           ))}
         </Space>
       ),
     },
     {
-      title: "Thao tác",
+      title: "Action",
       key: "action",
       render: (_, record) => (
         <Popconfirm
-          title="Xóa vai trò"
-          description="Bạn có chắc chắn muốn xóa vai trò này? Việc này có thể ảnh hưởng đến người dùng hiện tại."
+          title="Delete Role"
+          description="Are you sure you want to delete this role? This may affect current users."
           onConfirm={() => handleDeleteRole(record.name)}
-          okText="Xóa"
-          cancelText="Hủy"
+          okText="Delete"
+          cancelText="Cancel"
           okButtonProps={{ danger: true, loading: deleteRoleMut.isPending }}
         >
-          <Button danger type="link" size="small">Xóa</Button>
+          <Button danger type="link" size="small">Delete</Button>
         </Popconfirm>
       ),
     }
@@ -143,29 +148,29 @@ export default function RolesPage() {
 
   const permColumns: ColumnsType<PermissionResponse> = [
     {
-      title: "Quyền hạn",
+      title: "Permission",
       dataIndex: "name",
       key: "name",
-      render: (text) => <Tag color="purple">{text}</Tag>,
+      render: (text) => <Tag color="purple">{formatEnum(text)}</Tag>,
     },
     {
-      title: "Mô tả",
+      title: "Description",
       dataIndex: "description",
       key: "description",
     },
     {
-      title: "Thao tác",
+      title: "Action",
       key: "action",
       render: (_, record) => (
         <Popconfirm
-          title="Xóa quyền hạn"
-          description="Xóa quyền hạn này có thể ảnh hưởng đến các vai trò đang sử dụng nó. Tiếp tục?"
+          title="Delete Permission"
+          description="Deleting this permission may affect roles currently using it. Continue?"
           onConfirm={() => handleDeletePerm(record.name)}
-          okText="Xóa"
-          cancelText="Hủy"
+          okText="Delete"
+          cancelText="Cancel"
           okButtonProps={{ danger: true, loading: deletePermMut.isPending }}
         >
-          <Button danger type="link" size="small">Xóa</Button>
+          <Button danger type="link" size="small">Delete</Button>
         </Popconfirm>
       ),
     }
@@ -175,7 +180,7 @@ export default function RolesPage() {
 
   const roleTab = (
     <div className="space-y-6">
-      <Card title="Tạo Vai Trò Mới" size="small">
+      <Card title="Create New Role" size="small">
         <Form
           form={roleForm}
           layout="vertical"
@@ -183,44 +188,44 @@ export default function RolesPage() {
           style={{ maxWidth: 600 }}
         >
           <Form.Item
-            label="Tên vai trò (VD: MODERATOR)"
+            label="Role Name (e.g. MODERATOR)"
             name="name"
-            rules={[{ required: true, message: "Vui lòng nhập tên vai trò" }]}
+            rules={[{ required: true, message: "Please enter role name" }]}
           >
-            <Input placeholder="Nhập tên vai trò" />
+            <Input placeholder="Enter role name" />
           </Form.Item>
           
           <Form.Item
-            label="Mô tả"
+            label="Description"
             name="description"
-            rules={[{ required: true, message: "Vui lòng nhập mô tả" }]}
+            rules={[{ required: true, message: "Please enter description" }]}
           >
-            <Input.TextArea placeholder="Mô tả chi tiết" rows={2} />
+            <Input.TextArea placeholder="Detailed description" rows={2} />
           </Form.Item>
           
           <Form.Item
-            label="Quyền hạn"
+            label="Permissions"
             name="permissions"
-            rules={[{ required: true, message: "Vui lòng chọn ít nhất 1 quyền hạn" }]}
+            rules={[{ required: true, message: "Please select at least 1 permission" }]}
           >
             <Select
               mode="multiple"
               allowClear
-              placeholder="Chọn các quyền hạn"
-              options={permList.map(p => ({ label: p.name, value: p.name }))}
+              placeholder="Select permissions"
+              options={permList.map(p => ({ label: formatEnum(p.name), value: p.name }))}
               loading={loadingPerms}
             />
           </Form.Item>
 
           <Form.Item style={{ marginBottom: 0 }}>
             <Button type="primary" htmlType="submit" loading={createRoleMut.isPending}>
-              {createRoleMut.isPending ? "Đang tạo…" : "Tạo vai trò"}
+              {createRoleMut.isPending ? "Creating..." : "Create Role"}
             </Button>
           </Form.Item>
         </Form>
       </Card>
 
-      <Card title="Danh sách Vai Trò" size="small" styles={{ body: { padding: 0 } }}>
+      <Card title="Roles List" size="small" styles={{ body: { padding: 0 } }}>
         <QueryState isLoading={loadingRoles} error={errRoles as Error | null}>
           <Table
             dataSource={roleList}
@@ -235,7 +240,7 @@ export default function RolesPage() {
 
   const permTab = (
     <div className="space-y-6">
-      <Card title="Tạo Quyền Hạn Mới" size="small">
+      <Card title="Create New Permission" size="small">
         <Form
           form={permForm}
           layout="vertical"
@@ -243,30 +248,30 @@ export default function RolesPage() {
           style={{ maxWidth: 600 }}
         >
           <Form.Item
-            label="Tên quyền hạn (VD: MODERATE_COMMENTS)"
+            label="Permission Name (e.g. MODERATE_COMMENTS)"
             name="name"
-            rules={[{ required: true, message: "Vui lòng nhập tên quyền hạn" }]}
+            rules={[{ required: true, message: "Please enter permission name" }]}
           >
-            <Input placeholder="Nhập tên quyền hạn" />
+            <Input placeholder="Enter permission name" />
           </Form.Item>
           
           <Form.Item
-            label="Mô tả"
+            label="Description"
             name="description"
-            rules={[{ required: true, message: "Vui lòng nhập mô tả" }]}
+            rules={[{ required: true, message: "Please enter description" }]}
           >
-            <Input.TextArea placeholder="Mô tả chi tiết" rows={2} />
+            <Input.TextArea placeholder="Detailed description" rows={2} />
           </Form.Item>
 
           <Form.Item style={{ marginBottom: 0 }}>
             <Button type="primary" htmlType="submit" loading={createPermMut.isPending}>
-              {createPermMut.isPending ? "Đang tạo…" : "Tạo quyền hạn"}
+              {createPermMut.isPending ? "Creating..." : "Create Permission"}
             </Button>
           </Form.Item>
         </Form>
       </Card>
 
-      <Card title="Danh sách Quyền Hạn" size="small" styles={{ body: { padding: 0 } }}>
+      <Card title="Permissions List" size="small" styles={{ body: { padding: 0 } }}>
         <QueryState isLoading={loadingPerms} error={errPerms as Error | null}>
           <Table
             dataSource={permList}
@@ -281,19 +286,19 @@ export default function RolesPage() {
 
   return (
     <div className="space-y-6">
-      <Title level={4} style={{ margin: 0 }}>Quản lý Vai trò & Quyền hạn</Title>
+      <Title level={4} style={{ margin: 0 }}>Roles & Permissions Management</Title>
       
       <Tabs
         defaultActiveKey="roles"
         items={[
           {
             key: "roles",
-            label: "Vai Trò (Roles)",
+            label: "Roles",
             children: roleTab,
           },
           {
             key: "permissions",
-            label: "Quyền Hạn (Permissions)",
+            label: "Permissions",
             children: permTab,
           },
         ]}

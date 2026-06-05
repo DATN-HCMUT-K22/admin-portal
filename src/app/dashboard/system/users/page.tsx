@@ -5,6 +5,7 @@ import { useUsers } from "@/hooks/use-admin-queries";
 import { QueryState } from "@/components/query-state";
 import { UserActivityLogDrawer } from "@/components/activity-logs/UserActivityLogDrawer";
 import { CreateUserModal } from "@/components/users/CreateUserModal";
+import { useAuth } from "@/providers/auth-provider";
 import { useDebounce } from "@/hooks/useDebounce";
 import Link from "next/link";
 import { Table, Input, Select, Tag, Button, Space } from "antd";
@@ -15,6 +16,9 @@ import { SearchOutlined } from "@ant-design/icons";
 const { Option } = Select;
 
 export default function UsersPage() {
+  const { user } = useAuth();
+  const isSystemAdmin = user?.roles?.some(r => r.name === "SYSTEM_ADMIN");
+
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -90,8 +94,8 @@ export default function UsersPage() {
       title: "Status",
       key: "status",
       render: (_, record) => {
-        if (record.deleted) return <Tag>Đã xóa</Tag>;
-        if (record.locked) return <Tag color="warning">Bị khóa</Tag>;
+        if (record.deleted) return <Tag>Deleted</Tag>;
+        if (record.locked) return <Tag color="warning">Locked</Tag>;
         return <Tag color="success">Active</Tag>;
       },
     },
@@ -107,18 +111,22 @@ export default function UsersPage() {
       align: "right",
       render: (_, record) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            onClick={() => setDrawerUser({ id: record.id, username: record.username })}
-          >
-            Activity
-          </Button>
-          <Link href={`/dashboard/system/users/${record.id}`}>
-            <Button type="link" size="small">
-              Details
+          {isSystemAdmin && (
+            <Button
+              type="link"
+              size="small"
+              onClick={() => setDrawerUser({ id: record.id, username: record.username })}
+            >
+              Activity
             </Button>
-          </Link>
+          )}
+          {isSystemAdmin && (
+            <Link href={`/dashboard/system/users/${record.id}`}>
+              <Button type="link" size="small">
+                Details
+              </Button>
+            </Link>
+          )}
         </Space>
       ),
     },
@@ -139,9 +147,11 @@ export default function UsersPage() {
 
         {/* Search & Filters */}
         <div className="flex gap-3 items-center flex-wrap">
-          <Button type="primary" onClick={() => setIsCreateModalOpen(true)}>
-            Tạo Người Dùng
-          </Button>
+          {isSystemAdmin && (
+            <Button type="primary" onClick={() => setIsCreateModalOpen(true)}>
+              Create User
+            </Button>
+          )}
           <Select
             value={roleFilter}
             onChange={(val) => { setRoleFilter(val); setPage(1); }}

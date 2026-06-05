@@ -5,11 +5,11 @@ interface Props {
 }
 
 const statusConfig: Record<ReportStatus, { label: string; className: string }> = {
-  PENDING: { label: "Đang chờ", className: "text-amber-600" },
-  UNDER_REVIEW: { label: "Đang xem xét", className: "text-blue-600" },
-  PROCESSED: { label: "Đã xử lý", className: "text-green-600" },
-  DISMISSED: { label: "Đã bỏ qua", className: "text-gray-500" },
-  ESCALATED: { label: "Đã leo thang", className: "text-red-600" },
+  PENDING: { label: "Pending", className: "text-amber-600" },
+  UNDER_REVIEW: { label: "Under Review", className: "text-blue-600" },
+  PROCESSED: { label: "Processed", className: "text-green-600" },
+  DISMISSED: { label: "Dismissed", className: "text-gray-500" },
+  ESCALATED: { label: "Escalated", className: "text-red-600" },
 };
 
 export function ReportStatusBadge({ status }: Props) {

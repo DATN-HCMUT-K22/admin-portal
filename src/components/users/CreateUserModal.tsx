@@ -56,11 +56,11 @@ export function CreateUserModal({ open, onClose }: Props) {
           fullName: values.fullName,
         });
       }
-      message.success("Tạo người dùng thành công");
+      message.success("User created successfully");
       reset();
       onClose();
     } catch (error: any) {
-      message.error(error?.message || "Tạo người dùng thất bại");
+      message.error(error?.message || "Failed to create user");
     } finally {
       setLoading(false);
     }
@@ -78,18 +78,18 @@ export function CreateUserModal({ open, onClose }: Props) {
 
   return (
     <Modal
-      title="Tạo Người Dùng Mới"
+      title="Create New User"
       open={open}
       onCancel={handleCancel}
       onOk={handleSubmit(onSubmit)}
       confirmLoading={loading}
-      okText="Tạo"
-      cancelText="Hủy"
+      okText="Create"
+      cancelText="Cancel"
       width={600}
     >
       <Form layout="vertical" className="mt-4">
         <Form.Item
-          label="Tên đăng nhập (Username)"
+          label="Username"
           validateStatus={errors.username ? "error" : ""}
           help={errors.username?.message}
           required
@@ -97,7 +97,7 @@ export function CreateUserModal({ open, onClose }: Props) {
           <Controller
             name="username"
             control={control}
-            render={({ field }) => <Input {...field} placeholder="Nhập tên đăng nhập" />}
+            render={({ field }) => <Input {...field} placeholder="Enter username" />}
           />
         </Form.Item>
 
@@ -110,12 +110,12 @@ export function CreateUserModal({ open, onClose }: Props) {
           <Controller
             name="email"
             control={control}
-            render={({ field }) => <Input {...field} type="email" placeholder="Nhập email" />}
+            render={({ field }) => <Input {...field} type="email" placeholder="Enter email" />}
           />
         </Form.Item>
 
         <Form.Item
-          label="Mật khẩu"
+          label="Password"
           validateStatus={errors.password ? "error" : ""}
           help={errors.password?.message}
           required
@@ -123,24 +123,24 @@ export function CreateUserModal({ open, onClose }: Props) {
           <Controller
             name="password"
             control={control}
-            render={({ field }) => <Input.Password {...field} placeholder="Nhập mật khẩu" />}
+            render={({ field }) => <Input.Password {...field} placeholder="Enter password" />}
           />
         </Form.Item>
 
         <Form.Item
-          label="Họ và tên"
+          label="Full Name"
           validateStatus={errors.fullName ? "error" : ""}
           help={errors.fullName?.message}
         >
           <Controller
             name="fullName"
             control={control}
-            render={({ field }) => <Input {...field} placeholder="Nhập họ và tên (tùy chọn)" />}
+            render={({ field }) => <Input {...field} placeholder="Enter full name (optional)" />}
           />
         </Form.Item>
 
         <Form.Item
-          label="Vai trò (Roles)"
+          label="Roles"
           validateStatus={errors.roles ? "error" : ""}
           help={errors.roles?.message}
         >
@@ -151,15 +151,15 @@ export function CreateUserModal({ open, onClose }: Props) {
               <Select
                 {...field}
                 mode="multiple"
-                placeholder="Chọn vai trò (để trống sẽ tạo user bình thường)"
+                placeholder="Select roles (leave blank for normal user)"
                 options={roleOptions}
                 allowClear
               />
             )}
           />
           <Text type="secondary" className="text-xs mt-1 block">
-            Nếu chọn vai trò, người dùng sẽ được tạo kèm các vai trò tương ứng (API: /with-roles).
-            Nếu để trống, sẽ tạo user mặc định (API: /users).
+            If roles are selected, the user will be created with the corresponding roles (API: /with-roles).
+            If left blank, a default user will be created (API: /users).
           </Text>
         </Form.Item>
       </Form>

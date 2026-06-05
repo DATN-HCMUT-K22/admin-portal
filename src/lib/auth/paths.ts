@@ -39,8 +39,8 @@ export function dashboardZone(pathname: string): DashboardZone {
 
 /** Zone cần quyền gì */
 export function zoneRequires(zone: DashboardZone): "admin" | "ba" | "portal" {
-  if (zone === "system" || zone === "moderation") return "admin";
-  if (zone === "business") return "ba";
+  if (zone === "system") return "admin";
+  if (zone === "business" || zone === "moderation") return "ba";
   return "portal";
 }
 

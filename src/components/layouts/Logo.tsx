@@ -26,7 +26,7 @@ export function Logo({ collapsed = false }: LogoProps) {
       {collapsed ? (
         <HomeOutlined />
       ) : (
-        <span>Admin Panel</span>
+        <span>Portal Admin</span>
       )}
     </Link>
   )

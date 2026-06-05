@@ -162,13 +162,13 @@ export const ACTIVITY_TAB_ACTIONS: Record<ActivityTabKey, ActivityAction[]> = {
 };
 
 export const ACTIVITY_TAB_LABELS: Record<ActivityTabKey, string> = {
-  all: "Tất cả",
-  post: "Bài viết",
-  comment: "Bình luận",
-  group: "Nhóm",
-  itinerary: "Lịch trình",
-  message: "Tin nhắn",
-  auth: "Tài khoản",
+  all: "All",
+  post: "Post",
+  comment: "Comment",
+  group: "Group",
+  itinerary: "Itinerary",
+  message: "Message",
+  auth: "Auth",
 };
 
 /** ActivityLog response từ BE (snake_case cho timestamps & entity fields) */
@@ -193,7 +193,7 @@ export interface ActivityLogParams {
 // ─── User Management Requests ──────────────────────────────────────────────────
 
 export interface UserStatusUpdateRequest {
-  locked: boolean;
+  isLocked: boolean;
 }
 
 export interface UserRoleUpdateRequest {
@@ -375,4 +375,43 @@ export interface SystemHealthResponse {
   error_count: number;
   avg_response_time_ms: number;
   recent_errors: RecentErrorDto[];
+}
+
+// ─── Admin Dashboard ──────────────────────────────────────────────────────────
+
+export interface AdminDashboardOverviewResponse {
+  users: {
+    total: number;
+    locked: number;
+  };
+  content: {
+    posts: number;
+    comments: number;
+    itineraries: number;
+    groups: number;
+  };
+  moderation: {
+    pendingReports: number;
+    processedReports: number;
+    dismissedReports: number;
+    totalActions: number;
+  };
+  generatedAt: string;
+}
+
+// ─── System Configs ──────────────────────────────────────────────────────────
+
+export interface SystemConfigResponse {
+  key: string;
+  value: string;
+  data_type: string;
+  group: string;
+  description: string;
+  updated_at: string;
+  updated_by: string;
+}
+
+export interface SystemConfigUpdateRequest {
+  value: string;
+  description?: string;
 }

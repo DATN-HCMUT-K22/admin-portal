@@ -10,6 +10,7 @@ import {
   FileTextOutlined,
   SettingOutlined,
   ShopOutlined,
+  DashboardOutlined,
 } from '@ant-design/icons'
 import { Logo } from './Logo'
 import { useAuth } from '@/providers/auth-provider'
@@ -27,13 +28,22 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { user } = useAuth()
-  
+
   const isSystemAdmin = user?.roles?.some(r => r.name === 'SYSTEM_ADMIN')
   const isBusinessAdmin = user?.roles?.some(r => r.name === 'BUSINESS_ADMIN')
+  const hasDashboardOverviewAccess = user?.roles?.some(role => role.permissions?.some(p => p.name === 'READ_ADMIN_DASHBOARD'))
 
   // Build menu items dynamically based on roles
   const menuItems = useMemo<MenuItem[]>(() => {
     const items: MenuItem[] = []
+
+    if (hasDashboardOverviewAccess) {
+      items.push({
+        key: '/dashboard/overview',
+        icon: <DashboardOutlined />,
+        label: 'Overview',
+      })
+    }
 
     if (isSystemAdmin) {
       items.push({
@@ -43,7 +53,6 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
         children: [
           {
             key: '/dashboard/system/users',
-            icon: <UserOutlined />,
             label: 'Users',
           },
           {
@@ -54,26 +63,9 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
             key: '/dashboard/system/activity-logs',
             label: 'Activity Logs',
           },
-        ],
-      })
-      
-      items.push({
-        key: '/dashboard/moderation',
-        icon: <SafetyOutlined />,
-        label: 'Moderation',
-        children: [
           {
-            key: '/dashboard/moderation/reports',
-            icon: <FileTextOutlined />,
-            label: 'Reports',
-          },
-          {
-            key: '/dashboard/moderation/moderate',
-            label: 'Moderation Log',
-          },
-          {
-            key: '/dashboard/moderation/feedbacks',
-            label: 'Feedbacks',
+            key: '/dashboard/system/configs',
+            label: 'Configs',
           },
         ],
       })
@@ -86,6 +78,10 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
           label: 'Reports',
         },
         {
+          key: '/dashboard/moderation/moderate',
+          label: 'Moderation Log',
+        },
+        {
           key: '/dashboard/business/feedbacks',
           label: 'Feedbacks',
         },
@@ -95,7 +91,6 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
       if (!isSystemAdmin) {
         businessChildren.unshift({
           key: '/dashboard/system/users',
-          icon: <UserOutlined />,
           label: 'Users',
         })
       }
@@ -109,7 +104,7 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
     }
 
     return items
-  }, [isSystemAdmin, isBusinessAdmin])
+  }, [isSystemAdmin, isBusinessAdmin, hasDashboardOverviewAccess])
 
   // Find selected key from current pathname
   const getSelectedKey = () => {

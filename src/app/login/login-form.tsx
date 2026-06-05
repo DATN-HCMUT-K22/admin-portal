@@ -9,7 +9,7 @@ import * as authApi from "@/lib/api/auth";
 import * as usersApi from "@/lib/api/users";
 import { useAuth } from "@/providers/auth-provider";
 import { useAdminStore } from "@/stores/admin-store";
-import { getPostLoginRedirectPath } from "@/lib/auth/paths";
+import { getPostLoginRedirectPath, canAccessDashboardPath } from "@/lib/auth/paths";
 
 const { Title, Text } = Typography;
 
@@ -37,7 +37,10 @@ export function LoginForm() {
         : null;
 
     if (hasAdmin || hasBa) {
-      router.replace(safeReturn ?? getPostLoginRedirectPath(user.roles));
+      const target = (safeReturn && canAccessDashboardPath(safeReturn, user.roles))
+        ? safeReturn
+        : getPostLoginRedirectPath(user.roles);
+      router.replace(target);
     } else {
       router.replace("/home");
     }
@@ -65,7 +68,9 @@ export function LoginForm() {
         !returnUrl.startsWith("/login")
           ? returnUrl
           : null;
-      const target = safeReturn ?? getPostLoginRedirectPath(me.roles);
+      const target = (safeReturn && canAccessDashboardPath(safeReturn, me.roles))
+        ? safeReturn
+        : getPostLoginRedirectPath(me.roles);
       router.replace(target);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đăng nhập thất bại.");
