@@ -248,6 +248,7 @@ export interface HandleReportRequest {
     user_id: string;
     actionType: string;
     note?: string;
+    lockedUntil?: string;
   };
 }
 
@@ -260,6 +261,7 @@ export interface ModerationActionRequest {
   user_id: string;
   actionType: ModerationActionType | string;
   note?: string;
+  lockedUntil?: string;
 }
 
 /** Response từ BE — snake_case fields */

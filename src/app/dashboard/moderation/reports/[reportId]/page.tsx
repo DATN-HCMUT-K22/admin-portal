@@ -68,15 +68,25 @@ export default function ReportDetailPage() {
         };
 
         if (data.action !== 'DISMISS' && report?.reported_user?.id) {
+          let lockedUntilStr = undefined;
+          if (data.action === 'BAN_USER_TEMPORARY' && data.banDays) {
+            const date = new Date();
+            date.setDate(date.getDate() + data.banDays);
+            lockedUntilStr = date.toISOString();
+          }
+
           payload.moderation_action = {
             user_id: report.reported_user.id,
             actionType: data.action,
             note: data.reason || '',
+            ...(lockedUntilStr ? { lockedUntil: lockedUntilStr } : {})
           };
           payload.feedback_content = "Cảm ơn bạn đã báo cáo. Chúng tôi đã xử lý vi phạm.";
         } else if (data.action === 'DISMISS') {
           payload.feedback_content = "Cảm ơn bạn đã báo cáo. Chúng tôi đã xem xét và không thấy vi phạm.";
         }
+
+        console.log("Submitting payload: ", payload);
 
         handleMutation.mutate(
           payload,

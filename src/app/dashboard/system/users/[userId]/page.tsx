@@ -79,6 +79,8 @@ export default function UserDetailPage() {
     },
   });
 
+  const modActionType = modForm.watch("actionType");
+
   function handleTabChange(tab: ActivityTabKey) {
     setActiveTab(tab);
     setLogPage(1);
@@ -238,11 +240,17 @@ export default function UserDetailPage() {
               >
                 <form
                   className="space-y-4"
-                  onSubmit={modForm.handleSubmit((v) =>
-                    moderateMut.mutateAsync(v).then(() => {
-                      modForm.reset({ ...v, note: "" });
-                    }).catch(() => undefined)
-                  )}
+                  onSubmit={modForm.handleSubmit((v) => {
+                    let payload: any = { ...v };
+                    if (v.actionType === 'BAN_USER_TEMPORARY' && v.banDays) {
+                      const date = new Date();
+                      date.setDate(date.getDate() + v.banDays);
+                      payload.lockedUntil = date.toISOString();
+                    }
+                    return moderateMut.mutateAsync(payload).then(() => {
+                      modForm.reset({ ...v, note: "", banDays: undefined });
+                    }).catch(() => undefined);
+                  })}
                 >
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -257,12 +265,38 @@ export default function UserDetailPage() {
                             onChange={field.onChange}
                             options={[
                               { value: "WARN_USER", label: "Cảnh cáo (WARN_USER)" },
-                              { value: "BAN_USER", label: "Khóa tài khoản (BAN_USER)" },
+                              { value: "BAN_USER_TEMPORARY", label: "Khóa tạm thời (BAN_USER_TEMPORARY)" },
+                              { value: "BAN_USER_PERMANENT", label: "Khóa vĩnh viễn (BAN_USER_PERMANENT)" },
+                              { value: "UNLOCK_USER", label: "Mở khóa tài khoản (UNLOCK_USER)" },
                             ]}
                           />
                         )}
                       />
                     </div>
+                    {modActionType === "BAN_USER_TEMPORARY" && (
+                      <div>
+                        <label className="mb-1 block text-sm font-medium">Số ngày khóa (1-365)</label>
+                        <Controller
+                          name="banDays"
+                          control={modForm.control}
+                          render={({ field }) => (
+                            <Input
+                              type="number"
+                              min={1}
+                              max={365}
+                              {...field}
+                              onChange={e => field.onChange(parseInt(e.target.value, 10))}
+                              placeholder="Nhập số ngày..."
+                            />
+                          )}
+                        />
+                        {modForm.formState.errors.banDays && (
+                          <Text type="danger" className="text-xs">
+                            {modForm.formState.errors.banDays.message}
+                          </Text>
+                        )}
+                      </div>
+                    )}
                     <div>
                       <label className="mb-1 block text-sm font-medium">Lý do / Ghi chú</label>
                       <Controller
@@ -323,7 +357,7 @@ export default function UserDetailPage() {
                         dataIndex: "action_type",
                         key: "action",
                         render: (val) => (
-                          <Tag color={val === "BAN_USER" ? "error" : "warning"}>
+                          <Tag color={val?.startsWith("BAN") ? "error" : "warning"}>
                             {val}
                           </Tag>
                         ),

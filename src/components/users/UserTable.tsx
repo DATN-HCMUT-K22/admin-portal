@@ -8,9 +8,10 @@ import type { ColumnsType } from "antd/es/table";
 interface Props {
   users: UserAdminView[];
   showActions?: boolean;
+  extraActions?: (record: UserAdminView) => React.ReactNode;
 }
 
-export function UserTable({ users, showActions = true }: Props) {
+export function UserTable({ users, showActions = true, extraActions }: Props) {
   const columns: ColumnsType<UserAdminView> = [
     {
       title: "Username",
@@ -37,18 +38,23 @@ export function UserTable({ users, showActions = true }: Props) {
       dataIndex: "credits",
       key: "credits",
     },
-    ...(showActions
+    ...(showActions || extraActions
       ? [
           {
             title: "",
             key: "action",
             align: "right" as const,
             render: (_: any, record: UserAdminView) => (
-              <Link href={`/dashboard/system/users/${record.id}`}>
-                <Button type="link" size="small">
-                  Details
-                </Button>
-              </Link>
+              <div className="flex justify-end gap-2">
+                {extraActions?.(record)}
+                {showActions && (
+                  <Link href={`/dashboard/system/users/${record.id}`}>
+                    <Button type="link" size="small">
+                      Details
+                    </Button>
+                  </Link>
+                )}
+              </div>
             ),
           },
         ]

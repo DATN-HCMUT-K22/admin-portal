@@ -29,11 +29,9 @@ export default function ModerationHistoryPage() {
       title: "Người dùng bị phạt",
       key: "user",
       render: (_, item) => (
-        <Link href={`/dashboard/system/users/${item.moderated_user?.id}`}>
-          <Typography.Link>
-            {item.moderated_user?.username || item.moderated_user?.id || "N/A"}
-          </Typography.Link>
-        </Link>
+        <Text>
+          {item.moderated_user?.username || item.moderated_user?.id || "N/A"}
+        </Text>
       ),
     },
     {
@@ -41,7 +39,7 @@ export default function ModerationHistoryPage() {
       dataIndex: "action_type",
       key: "action_type",
       render: (val) => (
-        <Tag color={val === "BAN_USER" ? "error" : "warning"}>
+        <Tag color={val === "BAN_USER" || val === "BAN_USER_TEMPORARY" ? "error" : "warning"}>
           {val}
         </Tag>
       ),
@@ -92,7 +90,8 @@ export default function ModerationHistoryPage() {
             options={[
               { value: "", label: "Tất cả hành động" },
               { value: "WARN_USER", label: "WARN_USER (Cảnh cáo)" },
-              { value: "BAN_USER", label: "BAN_USER (Khóa)" },
+              { value: "BAN_USER", label: "BAN_USER (Khóa vĩnh viễn)" },
+              { value: "BAN_USER_TEMPORARY", label: "BAN_USER_TEMPORARY (Khóa tạm thời)" },
               { value: "DELETE_POST", label: "DELETE_POST (Xóa bài)" },
             ]}
           />
