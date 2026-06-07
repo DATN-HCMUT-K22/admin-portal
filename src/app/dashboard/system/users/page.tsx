@@ -5,12 +5,13 @@ import { useUsers } from "@/hooks/use-admin-queries";
 import { QueryState } from "@/components/query-state";
 import { UserActivityLogDrawer } from "@/components/activity-logs/UserActivityLogDrawer";
 import { CreateUserModal } from "@/components/users/CreateUserModal";
+import { ModerateUserModal } from "@/components/users/ModerateUserModal";
 import { useAuth } from "@/providers/auth-provider";
 import { useDebounce } from "@/hooks/useDebounce";
 import Link from "next/link";
 import { Table, Input, Select, Tag, Button, Space } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import type { UserResponse } from "@/types/api";
+import type { UserResponse, UserAdminView } from "@/types/api";
 import { SearchOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -18,12 +19,14 @@ const { Option } = Select;
 export default function UsersPage() {
   const { user } = useAuth();
   const isSystemAdmin = user?.roles?.some(r => r.name === "SYSTEM_ADMIN");
+  const isBusinessAdmin = user?.roles?.some(r => r.name === "BUSINESS_ADMIN");
 
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [drawerUser, setDrawerUser] = useState<{ id: string; username: string } | null>(null);
+  const [selectedUserToModerate, setSelectedUserToModerate] = useState<UserAdminView | null>(null);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -111,6 +114,16 @@ export default function UsersPage() {
       align: "right",
       render: (_, record) => (
         <Space>
+          {isBusinessAdmin && !isSystemAdmin && (
+            <Button
+              type="primary"
+              danger
+              size="small"
+              onClick={() => setSelectedUserToModerate(record as any)}
+            >
+              Moderate
+            </Button>
+          )}
           {isSystemAdmin && (
             <Button
               type="link"
@@ -213,6 +226,13 @@ export default function UsersPage() {
       <CreateUserModal
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+      />
+
+      {/* Moderate User Modal */}
+      <ModerateUserModal
+        user={selectedUserToModerate}
+        open={!!selectedUserToModerate}
+        onClose={() => setSelectedUserToModerate(null)}
       />
     </div>
   );

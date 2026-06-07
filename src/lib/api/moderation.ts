@@ -20,7 +20,7 @@ export async function moderateUser(body: ModerationActionRequest) {
 }
 
 /**
- * GET /api/v1/admins/moderation-actions
+ * GET /api/v1/admin/moderation-actions
  * Lấy danh sách moderation actions với filters.
  * NOTE: API có thể chưa implement, sẽ fail gracefully.
  */
@@ -43,7 +43,7 @@ export async function listModerationActions(params?: {
 
   try {
     const raw = await apiFetch<unknown>(
-      `/api/v1/admins/moderation-actions${qs ? `?${qs}` : ""}`
+      `/api/v1/admin/moderation-actions${qs ? `?${qs}` : ""}`
     );
     return unwrapData<Paginated<ModerationActionResponse>>(raw);
   } catch (error) {

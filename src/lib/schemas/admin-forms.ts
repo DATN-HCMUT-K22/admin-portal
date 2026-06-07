@@ -54,5 +54,17 @@ export const moderateUserSchema = z.object({
   user_id: z.string().min(1, "ID không hợp lệ"),
   actionType: z.enum(["BAN_USER", "WARN_USER", "DELETE_POST"]),
   note: z.string().optional(),
-});
+  banDays: z.number().int().min(1).max(365).optional(),
+}).refine(
+  (data) => {
+    if (data.actionType === 'BAN_USER') {
+      return data.banDays !== undefined && data.banDays > 0;
+    }
+    return true;
+  },
+  {
+    message: 'Phải nhập số ngày ban (lớn hơn 0) nếu chọn Khóa tài khoản',
+    path: ['banDays'],
+  }
+);
 

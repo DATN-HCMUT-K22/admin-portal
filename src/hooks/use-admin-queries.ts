@@ -209,6 +209,10 @@ export function useModerateUser() {
         queryKey: ["admin", "moderation-actions", "user", variables.user_id],
       });
       void qc.invalidateQueries({ queryKey: ["admin", "moderation-actions"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "users"] });
+      if (variables.user_id) {
+        void qc.invalidateQueries({ queryKey: queryKeys.admin.user(variables.user_id) });
+      }
     },
   });
 }

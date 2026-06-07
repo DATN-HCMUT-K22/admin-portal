@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useUsers } from "@/hooks/use-admin-queries";
 import { QueryState } from "@/components/query-state";
 import { UserTable } from "@/components/users/UserTable";
+import { ModerateUserModal } from "@/components/users/ModerateUserModal";
 import type { UserAdminView } from "@/types/api";
-import { Typography } from "antd";
+import { Typography, Button } from "antd";
 
 const { Title, Text } = Typography;
 
@@ -19,6 +21,8 @@ export default function BusinessUsersPage() {
     data as UserAdminView[] | { items: UserAdminView[] } | undefined
   );
 
+  const [selectedUser, setSelectedUser] = useState<UserAdminView | null>(null);
+
   return (
     <div className="space-y-4">
       <div>
@@ -27,8 +31,26 @@ export default function BusinessUsersPage() {
       </div>
 
       <QueryState isLoading={isLoading} error={error as Error | null}>
-        <UserTable users={users} showActions={false} />
+        <UserTable 
+          users={users} 
+          showActions={false} 
+          extraActions={(record) => (
+            <Button 
+              size="small" 
+              danger 
+              onClick={() => setSelectedUser(record)}
+            >
+              Moderate
+            </Button>
+          )}
+        />
       </QueryState>
+
+      <ModerateUserModal
+        user={selectedUser}
+        open={!!selectedUser}
+        onClose={() => setSelectedUser(null)}
+      />
     </div>
   );
 }

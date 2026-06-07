@@ -48,18 +48,9 @@ export function HeaderBar({ collapsed, onToggle }: HeaderBarProps) {
 
   // User dropdown menu
   const handleLogout = () => {
-    modal.confirm({
-      title: 'Confirm Logout',
-      content: 'Are you sure you want to log out?',
-      okText: 'Logout',
-      cancelText: 'Cancel',
-      okType: 'danger',
-      onOk: () => {
-        logout() // Clear tokens and query cache
-        message.success('Logged out successfully')
-        router.push('/login')
-      },
-    })
+    logout() // Clear tokens and query cache
+    message.success('Logged out successfully')
+    router.push('/login')
   }
 
   const userMenuItems: MenuProps['items'] = [
